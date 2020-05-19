@@ -17,4 +17,4 @@
 <br>a. Anti-Atlas Mtns., Morocco - https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23533
 <br>b. Dneiper River, Ukraine - https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23912
 
-6. Custom lens event at server/static/js/LensingViewer.js
+6. Custom lens event at server/static/js/Lensing.js

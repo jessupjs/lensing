@@ -1,12 +1,13 @@
 /*
-LensingViewer
+Lensing
  */
 
-class LensingViewer {
+class Lensing {
 
     // Vars
     handle = null;
-    viewer = null;
+    viewer_canvas = null;
+    test_canvas = null;
     overlay = null;
 
     // Configs
@@ -15,9 +16,8 @@ class LensingViewer {
     /*
     CONSTRUCTOR
      */
-    constructor(_target, _imgpath) {
-        this.target = _target;
-        this.imgpath = _imgpath;
+    constructor(_viewer) {
+        this.viewer = _viewer;
 
         this.init();
     }
@@ -27,17 +27,12 @@ class LensingViewer {
      */
     init() {
 
-        // Define handle
+        // Defs
         this.handle = this;
-
-        // Instantiate viewer
-        this.viewer = OpenSeadragon({
-            id: this.target,
-            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-            tileSources: `./static/assets/${this.imgpath}`,
-            homeFillsViewer: true,
-            visibilityRatio: 1.0,
-        });
+        this.viewer_canvas = this.viewer.hasOwnProperty('canvas')
+            ? this.viewer.canvas.querySelector('canvas')
+            : null;
+        this.test_canvas = document.querySelector('#testCanvas'); // TODO - testing
 
         // Add event listeners to viewer
         this.viewer.hasOwnProperty('canvas')
@@ -47,8 +42,6 @@ class LensingViewer {
         // Build overlay
         this.overlay = this.build_overlay();
 
-        // Setup canvas
-
 
     }
 
@@ -56,17 +49,19 @@ class LensingViewer {
     build_overlay
      */
     build_overlay() {
+        // Build container and canvas
         const container = document.createElement('div');
         container.setAttribute('class', 'lv_overlay_container');
         container.setAttribute('style', 'height: 100%; pointer-events: none; position: absolute; width: 100%;');
         const canvas = document.createElement('canvas');
         canvas.setAttribute('class', 'lv_overlay_canvas');
         if (this.viewer.hasOwnProperty('canvas')) {
-        canvas.setAttribute('width', `${this.viewer.canvas.clientWidth * 2}`);
-        canvas.setAttribute('height', `${this.viewer.canvas.clientHeight * 2}`);
+            canvas.setAttribute('width', `${this.viewer.canvas.clientWidth * 2}`);
+            canvas.setAttribute('height', `${this.viewer.canvas.clientHeight * 2}`);
         }
         canvas.setAttribute('style', 'height: 100%; pointer-events: none; position: absolute; width: 100%;');
         container.append(canvas);
+        // Append outside of viewer container
         this.viewer.hasOwnProperty('canvas')
             ? this.viewer.canvas.parentNode.append(container)
             : null;
@@ -80,17 +75,20 @@ class LensingViewer {
     /*
     draw_lens
      */
-    draw_lens(coords) {
+    draw_lens(data) {
         if (this.overlay.hasOwnProperty('context')) {
             // Clear
             this.overlay.context.clearRect(0, 0, this.overlay.canvas.width, this.overlay.canvas.height);
             // Draw
             this.overlay.context.strokeStyle = `white`;
             this.overlay.context.beginPath();
-            this.overlay.context.arc(coords.x, coords.y, this.lensR, 0, Math.PI * 2, true);
+            this.overlay.context.arc(data.x, data.y, this.lensR, 0, Math.PI * 2, true);
             this.overlay.context.stroke();
             //this.overlay.context.fillStyle = `rgba(0, 0, 255, 0.5)`;
             //this.overlay.context.fill();
+            // TODO - test
+            const ctx = this.test_canvas.getContext('2d');
+            ctx.putImageData(data.d, 0, 0);
         }
     }
 
@@ -112,8 +110,16 @@ class LensingViewer {
     handle_viewer_mousemove
      */
     handle_viewer_mousemove(e) {
-        let coords = {x: e.layerX * this.overlay.scale, y: e.layerY * this.overlay.scale};
-        this.draw_lens(coords);
+        // Get some information from canvas
+        const x = e.layerX * this.overlay.scale
+        const y = e.layerY * this.overlay.scale
+        const ctx = this.viewer_canvas.getContext('2d');
+        const d = ctx.getImageData(x - this.lensR, y - this.lensR, this.lensR * 2, this.lensR * 2);
+        this.draw_lens({
+            x: x,
+            y: y,
+            d: d
+        });
     }
 
     /*

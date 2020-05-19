@@ -11,11 +11,26 @@
     display: flex;
     height: 100vh;
     justify-content: center;
+    position: relative;
     width: 100vw;
 }
 
 #viewer {
     background-color: rgba(0, 0, 0, 0.9);
     height: 600px;
+    position: relative;
     width: 600px;
+}
+
+#testContainer {
+    background-color: rgba(0, 0, 0, 0.9);
+    height: 200px;
+    position: absolute;
+    right: 100px;
+    width: 200px;
+}
+
+#testCanvas {
+    height: 100%;
+    width: 100%;
 }
