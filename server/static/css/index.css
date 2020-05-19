@@ -1,0 +1,21 @@
+
+* {
+    border: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.slide {
+    align-items: center;
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    width: 100vw;
+}
+
+#viewer {
+    background-color: rgba(0, 0, 0, 0.9);
+    height: 600px;
+    width: 600px;
+}
