@@ -8,13 +8,20 @@
 
 2. Install packages: `pip install -r requirements.txt`
 
-3. Basic Flask - https://flask.palletsprojects.com/en/1.1.x/quickstart/#quickstart
+3. Basic Flask - 
+https://flask.palletsprojects.com/en/1.1.x/quickstart/#quickstart
 
-4. DZI's with deepzoom.py - https://github.com/openzoom/deepzoom.py
+4. DZI's with deepzoom.py - 
+https://github.com/openzoom/deepzoom.py
 <br>a. Generate in .dzi in modules/MyDeepZoom/make_dzi.py
     
-5. Assets from JPL-Caltech - https://www.jpl.nasa.gov/spaceimages/index.php?category=Earth
-<br>a. Anti-Atlas Mtns., Morocco - https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23533
-<br>b. Dneiper River, Ukraine - https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23912
+5. Assets from JPL-Caltech > indexed in Photoshop to n-colors
+<br>a. Anti-Atlas Mtns., Morocco - 
+https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23533
+<br>b. Dneiper River, Ukraine - 
+https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23912
 
 6. Custom lens event at server/static/js/Lensing.js
+
+7. OSd Filtering Plugin (as ref. for filters) - 
+https://github.com/usnistgov/OpenSeadragonFiltering

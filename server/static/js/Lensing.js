@@ -4,6 +4,10 @@ Lensing
 
 class Lensing {
 
+    // Class refs
+    Filters = null;
+    selFilter = 'go_natural';
+
     // Vars
     handle = null;
     viewer_canvas = null;
@@ -35,13 +39,18 @@ class Lensing {
         this.test_canvas = document.querySelector('#testCanvas'); // TODO - testing
 
         // Add event listeners to viewer
-        this.viewer.hasOwnProperty('canvas')
-            ? this.handle_attach_events(this.viewer.canvas)
-            : console.log('Err. No Viewer canvas');
+        if (this.viewer.hasOwnProperty('canvas')) {
+            this.handle_attach_events(this.viewer.canvas);
+        }
 
         // Build overlay
         this.overlay = this.build_overlay();
 
+        // Instantiate Filters
+        this.Filters = new LFilters();
+
+        // Build FilterBox
+        this.FilterBox = new LFilterBox(this, this.Filters.filters, 'testFilterBox');
 
     }
 
@@ -49,10 +58,12 @@ class Lensing {
     build_overlay
      */
     build_overlay() {
-        // Build container and canvas
+        // Build container
         const container = document.createElement('div');
         container.setAttribute('class', 'lv_overlay_container');
         container.setAttribute('style', 'height: 100%; pointer-events: none; position: absolute; width: 100%;');
+
+        // Build canvas
         const canvas = document.createElement('canvas');
         canvas.setAttribute('class', 'lv_overlay_canvas');
         if (this.viewer.hasOwnProperty('canvas')) {
@@ -60,11 +71,14 @@ class Lensing {
             canvas.setAttribute('height', `${this.viewer.canvas.clientHeight * 2}`);
         }
         canvas.setAttribute('style', 'height: 100%; pointer-events: none; position: absolute; width: 100%;');
+
+        // Append canvas to container, container to viewer
         container.append(canvas);
-        // Append outside of viewer container
         this.viewer.hasOwnProperty('canvas')
             ? this.viewer.canvas.parentNode.append(container)
             : null;
+
+        // Return
         return {
             canvas: canvas,
             context: canvas.getContext('2d'),
@@ -87,8 +101,9 @@ class Lensing {
             //this.overlay.context.fillStyle = `rgba(0, 0, 255, 0.5)`;
             //this.overlay.context.fill();
             // TODO - test
+            const filteredD = this.Filters.filter(this.selFilter, data.d)
             const ctx = this.test_canvas.getContext('2d');
-            ctx.putImageData(data.d, 0, 0);
+            ctx.putImageData(filteredD, this.lensR, this.lensR);
         }
     }
 

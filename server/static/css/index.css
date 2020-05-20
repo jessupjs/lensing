@@ -23,7 +23,9 @@
 }
 
 #testContainer {
-    background-color: rgba(0, 0, 0, 0.9);
+    align-items: center;
+    border: 1px solid black;
+    display: flex;
     height: 200px;
     position: absolute;
     right: 100px;
@@ -32,5 +34,11 @@
 
 #testCanvas {
     height: 100%;
+    position: relative;
     width: 100%;
+}
+
+#testFilterBox {
+    position: absolute;
+    left: -50px;
 }

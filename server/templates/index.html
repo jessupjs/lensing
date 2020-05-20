@@ -13,14 +13,18 @@
     <div id="viewer"></div>
     <div id="testContainer">
         <canvas id="testCanvas" height="400" width="400"></canvas>
+        <div id="testFilterBox"></div>
     </div>
 </div>
-<!-- OpenSeadragon -->
+<!-- OpenSeadragon / D3 -->
 <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
 <!-- Plugins -->
-<script src="{{ url_for('static', filename='./js/plugins/OpenSeadragonCanvasOverlayHd/dist/openseadragon-canvas-overlay-hd.js') }}"></script>
-<!-- Main -->
+<!-- Classes -->
 <script src="{{ url_for('static', filename='./js/Lensing.js') }}"></script>
+<script src="{{ url_for('static', filename='./js/LFilters.js') }}"></script>
+<script src="{{ url_for('static', filename='./js/LFilterBox.js') }}"></script>
+<!-- Main -->
 <script src="{{ url_for('static', filename='./js/main.js') }}"></script>
 </body>
 </html>
