@@ -23,6 +23,7 @@ class Lensing {
     constructor(_viewer) {
         this.viewer = _viewer;
 
+        // Init
         this.init();
     }
 
@@ -75,7 +76,7 @@ class Lensing {
         // Append canvas to container, container to viewer
         container.append(canvas);
         this.viewer.hasOwnProperty('canvas')
-            ? this.viewer.canvas.parentNode.append(container)
+            ? this.viewer.canvas.append(container)
             : null;
 
         // Return
@@ -93,17 +94,36 @@ class Lensing {
         if (this.overlay.hasOwnProperty('context')) {
             // Clear
             this.overlay.context.clearRect(0, 0, this.overlay.canvas.width, this.overlay.canvas.height);
-            // Draw
+            // Save
+            this.overlay.context.save();
+            // Filter
+            const filteredD = this.Filters.filter(this.selFilter, data.d)
+            // Convert to bitmap
+            createImageBitmap(filteredD).then(imgBitmap => {
+                // Clip
+                this.overlay.context.beginPath();
+                this.overlay.context.arc(data.x, data.y, this.lensR, 0, Math.PI * 2);
+                this.overlay.context.clip();
+                // Draw
+                this.overlay.context.drawImage(imgBitmap, data.x - this.lensR, data.y - this.lensR);
+                // Restore
+                this.overlay.context.restore();
+            });
+            // Lens border
             this.overlay.context.strokeStyle = `white`;
             this.overlay.context.beginPath();
-            this.overlay.context.arc(data.x, data.y, this.lensR, 0, Math.PI * 2, true);
+            this.overlay.context.arc(data.x, data.y, this.lensR, 0, Math.PI * 2);
             this.overlay.context.stroke();
-            //this.overlay.context.fillStyle = `rgba(0, 0, 255, 0.5)`;
-            //this.overlay.context.fill();
-            // TODO - test
-            const filteredD = this.Filters.filter(this.selFilter, data.d)
-            const ctx = this.test_canvas.getContext('2d');
-            ctx.putImageData(filteredD, this.lensR, this.lensR);
+        }
+    }
+
+    /*
+    hide_lens
+     */
+    hide_lens() {
+        if (this.overlay.hasOwnProperty('context')) {
+            // Clear
+            this.overlay.context.clearRect(0, 0, this.overlay.canvas.width, this.overlay.canvas.height);
         }
     }
 
@@ -111,20 +131,22 @@ class Lensing {
     handle_attach_events
      */
     handle_attach_events(viewer) {
-        viewer.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this))
+        viewer.addEventListener('mouseover', this.handle_viewer_mouseovermove.bind(this));
+        viewer.addEventListener('mousemove', this.handle_viewer_mouseovermove.bind(this));
+        viewer.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
     }
 
     /*
-    handle_viewer_mouseover
+    handle_viewer_change
      */
-    handle_viewer_mouseover(e) {
+    handle_viewer_change(e) {
         console.log(e)
     }
 
     /*
-    handle_viewer_mousemove
+    handle_viewer_mouseovermove
      */
-    handle_viewer_mousemove(e) {
+    handle_viewer_mouseovermove(e) {
         // Get some information from canvas
         const x = e.layerX * this.overlay.scale
         const y = e.layerY * this.overlay.scale
@@ -141,7 +163,13 @@ class Lensing {
     handle_viewer_mouseout
      */
     handle_viewer_mouseout(e) {
-        console.log(e)
+        this.hide_lens();
     }
 
 }
+
+/*
+Ref.
+https://stackoverflow.com/questions/38384001/using-imagedata-object-in-drawimage
+https://stackoverflow.com/questions/39665545/javascript-how-to-clip-using-drawimage-putimagedata
+ */

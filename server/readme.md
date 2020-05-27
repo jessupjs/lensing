@@ -22,6 +22,3 @@ https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23533
 https://www.jpl.nasa.gov/spaceimages/details.php?id=PIA23912
 
 6. Custom lens event at server/static/js/Lensing.js
-
-7. OSd Filtering Plugin (as ref. for filters) - 
-https://github.com/usnistgov/OpenSeadragonFiltering
