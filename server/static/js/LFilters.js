@@ -31,6 +31,35 @@ class LFilters {
         return this.d;
     }
 
+    /*
+    get_filter
+     */
+    get_filter(direction, currentFilter) {
+        let index = 0;
+        if (direction === 'none') {
+            return this.filters[index].name;
+        } else {
+            this.filters.forEach((f, i) => {
+                if (f.name === currentFilter) {
+                    index = i;
+                }
+            });
+            if (direction === 'next') {
+                if (index + 1 === this.filters.length) {
+                    return this.filters[0].name;
+                } else {
+                    return this.filters[index + 1].name;
+                }
+            } else if (direction === 'prev') {
+                if (index - 1 < 0) {
+                    return this.filters[this.filters.length - 1].name;
+                } else {
+                    return this.filters[index - 1].name;
+                }
+            }
+        }
+    }
+
     filters = [
         {
             name: 'go_natural',

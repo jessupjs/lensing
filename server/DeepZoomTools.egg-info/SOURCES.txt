@@ -1,0 +1,5 @@
+DeepZoomTools.egg-info/PKG-INFO
+DeepZoomTools.egg-info/SOURCES.txt
+DeepZoomTools.egg-info/dependency_links.txt
+DeepZoomTools.egg-info/requires.txt
+DeepZoomTools.egg-info/top_level.txt

@@ -128,6 +128,8 @@ class LFilterBox {
         // Update selected
         this.selected = e.name;
         this.parent.selFilter = e.name;
+        // Force update
+        this.parent.manage_lens_update(true);
 
         // Wrangle!
         this.wrangle();
