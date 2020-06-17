@@ -8,7 +8,11 @@
     <title>Lensing</title>
     <link href="{{ url_for('static', filename='./css/index.css') }}" rel="stylesheet">
 </head>
+
 <body>
+<header>
+    <img src="{{ url_for('static', filename='./assets/lensing_icon-black.svg') }}" alt="Lensing">
+</header>
 <div class="slide">
     <div id="notesContainer">
         <h2>Lens Size</h2>
@@ -38,15 +42,15 @@
         <div id="testFilterBox"></div>
     </div>
 </div>
+
 <!-- OpenSeadragon / D3 -->
 <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
-<script src="https://d3js.org/d3.v5.min.js"></script>
 <!-- Plugins -->
 <!-- Classes -->
 <script src="{{ url_for('static', filename='./js/Lensing.js') }}"></script>
-<script src="{{ url_for('static', filename='./js/LFilters.js') }}"></script>
-<script src="{{ url_for('static', filename='./js/LFilterBox.js') }}"></script>
+<script src="{{ url_for('static', filename='./js/Lenses.js') }}"></script>
 <!-- Main -->
 <script src="{{ url_for('static', filename='./js/main.js') }}"></script>
+
 </body>
 </html>

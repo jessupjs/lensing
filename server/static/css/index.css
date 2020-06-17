@@ -6,8 +6,19 @@
     padding: 0;
 }
 
+header {
+    position: fixed;
+    z-index: 100;
+}
+
+header img {
+    height: 40px;
+    margin: 5px;
+}
+
 .slide {
     align-items: center;
+    background-color: rgba(250, 250, 250, 1);
     display: flex;
     height: 100vh;
     justify-content: center;
