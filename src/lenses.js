@@ -6,7 +6,7 @@ LFilters
    - https://codepen.io/jOlga/pen/KyQMQW?editors=0010
  */
 
-class Lenses {
+export default class Lenses {
 
     // Class refs
     lensing = null;

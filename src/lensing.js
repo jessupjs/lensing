@@ -2,13 +2,15 @@
 Lensing
  */
 
+import Lenses from './lenses';
+
 /*
 TODO -
  1. Zoom quirks
  2. Use overlay and button constructors (but not sure why)
 */
 
-class Lensing {
+export default class Lensing {
 
     // Class refs
     lenses = null;
@@ -56,7 +58,8 @@ class Lensing {
     /*
     CONSTRUCTOR
      */
-    constructor(_viewer, _viewer_config) {
+    constructor(_osd, _viewer, _viewer_config) {
+        this.osd = _osd;
         this.viewer = _viewer;
         this.viewer_config = _viewer_config;
 
@@ -82,7 +85,7 @@ class Lensing {
         // Build overlay and button
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
-        this.button = this.build_button();
+        //this.button = this.build_button(); TODO - turned off for now
 
         // Instantiate Filters, and send over current lens size
         this.lenses = new Lenses(this);
@@ -138,7 +141,7 @@ class Lensing {
 
         // Build icon
         const icon = document.createElement('img');
-        icon.setAttribute('src', './static/assets/lensing_icon.svg');
+        icon.setAttribute('src', './assets/lensing_icon.svg');
         icon.setAttribute('alt', 'Lensing Icon');
         icon.setAttribute('style', `height: ${iconW}px; width: ${iconW}px; `
             + `position: relative; margin: ${iconPad}px;`
@@ -147,7 +150,7 @@ class Lensing {
 
         // Build iconKeyboard
         const iconKeyboard = document.createElement('img');
-        iconKeyboard.setAttribute('src', './static/assets/lensing_keyboard.svg');
+        iconKeyboard.setAttribute('src', './assets/lensing_keyboard.svg');
         iconKeyboard.setAttribute('alt', 'Keyboard Icon');
         iconKeyboard.setAttribute('style', `height: ${iconLilW}px; width: ${iconLilW}px; `
             + `position: relative; margin: ${iconPad / 2}px;`
@@ -156,7 +159,7 @@ class Lensing {
 
         // Build iconFilterConfig
         const iconFilterConfig = document.createElement('img');
-        iconFilterConfig.setAttribute('src', './static/assets/lensing_filter_config.svg');
+        iconFilterConfig.setAttribute('src', './assets/lensing_filter_config.svg');
         iconFilterConfig.setAttribute('alt', 'Keyboard Icon');
         iconFilterConfig.setAttribute('style', `height: ${iconLilW}px; width: ${iconLilW}px; `
             + `position: relative; margin: ${iconPad / 2}px;`
@@ -197,7 +200,7 @@ class Lensing {
         viewerEl.style.position = 'relative';
 
         // Instantiate viewer_magnify
-        const viewer_aux = new OpenSeadragon(this.viewer_config);
+        const viewer_aux = new this.osd(this.viewer_config);
 
         // Position
         const containers = viewerEl.querySelectorAll(`.openseadragon-container`);
@@ -278,7 +281,6 @@ class Lensing {
 
             // Filter
             let filteredD = this.lenses.modify(data.d);
-            //console.log(filteredD)
 
             // Convert to bitmap
             createImageBitmap(filteredD).then(imgBitmap => {
@@ -335,7 +337,6 @@ class Lensing {
      */
     handle_viewer_animation() {
 
-        // Update some position data
         // Update some position data
         this.position_data.zoom = this.viewer.viewport.getZoom();
         this.position_data.zoomAux = this.viewer_aux.viewport.getZoom();
@@ -471,7 +472,7 @@ class Lensing {
         if (!this.configs.placed) {
 
             // Move to point
-            const point = new OpenSeadragon.Point(e.layerX, e.layerY);
+            const point = new this.osd.Point(e.layerX, e.layerY);
             this.position_data.scrollPoint = this.viewer.viewport.viewerElementToViewportCoordinates(point);
             const gap = this.position_data.eventPoint.minus(this.position_data.scrollPoint).divide(this.configs.mag);
             this.position_data.refPoint = this.position_data.scrollPoint.plus(gap);
@@ -555,7 +556,11 @@ class Lensing {
                 && this.position_data.refPoint.hasOwnProperty('y')) {
 
                 // Zoom
-                this.viewer_aux.viewport.zoomTo(this.position_data.zoom * this.configs.mag, this.position_data.refPoint, e.immediately);
+                this.viewer_aux.viewport.zoomTo(
+                    this.position_data.zoom * this.configs.mag,
+                    this.position_data.refPoint,
+                    e.immediately
+                );
             }
         } else if (e.eventType === 'pan') {
             if (this.position_data.refPoint) {

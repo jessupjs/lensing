@@ -1,0 +1,23 @@
+{
+  "name": "lensing",
+  "version": "1.0.0",
+  "description": "Lens tooling plugin for OpenSeadragon ",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jessupjs/lensing.git"
+  },
+  "author": "Jared Jessup",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jessupjs/lensing/issues"
+  },
+  "homepage": "https://github.com/jessupjs/lensing#readme",
+  "keywords": [],
+  "dependencies": {
+    "openseadragon": "^2.4.2"
+  }
+}
