@@ -1,4 +1,9 @@
 ## Lensing
 
-1. To NPM
+#### Note
+This plugin for OpenSeadragon is currently in development and is not ready for use.
+
+#### Refs.
++ [npm](https://www.npmjs.com/package/lensing) - `npm i lensing`
++ [github](https://github.com/jessupjs/lensing) - `git clone git@github.com:jessupjs/lensing.git`
 

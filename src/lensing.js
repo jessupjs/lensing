@@ -7,7 +7,7 @@ import Lenses from './lenses';
 /*
 TODO -
  1. Zoom quirks
- 2. Use overlay and button constructors (but not sure why)
+
 */
 
 export default class Lensing {
@@ -44,6 +44,7 @@ export default class Lensing {
         on: true,
         placed: false,
         pos: [],
+        pxRatio: 1,
         rad: 100,
         rad_default: 100,
         rad_inc: 10,
@@ -62,6 +63,9 @@ export default class Lensing {
         this.osd = _osd;
         this.viewer = _viewer;
         this.viewer_config = _viewer_config;
+
+        // Set lensing configs
+        this.device_config();
 
         // Init
         this.init();
@@ -214,7 +218,7 @@ export default class Lensing {
     }
 
     /*
-    build_overlays
+    build_overlay
      */
     build_overlay(id, dims) {
 
@@ -238,8 +242,8 @@ export default class Lensing {
 
         // Build actualCanvas
         const actualCanvas = document.createElement('canvas');
-        actualCanvas.setAttribute('width', `${dims[0] * 2}`);
-        actualCanvas.setAttribute('height', `${dims[1] * 2}`);
+        actualCanvas.setAttribute('width', `${dims[0] * this.configs.pxRatio}`);
+        actualCanvas.setAttribute('height', `${dims[1] * this.configs.pxRatio}`);
         actualCanvas.setAttribute('style',
             'height: 100%; pointer-events: none; position: absolute; width: 100%;');
 
@@ -251,9 +255,32 @@ export default class Lensing {
             canvas_actual: actualCanvas,
             canvas: canvas,
             container: container,
-            context: actualCanvas.getContext('2d'),
-            scale: 2
+            context: actualCanvas.getContext('2d')
         };
+    }
+
+    /*
+    device_config
+     */
+    device_config() {
+
+        // Pixel ratio
+        const pxRatio = window.devicePixelRatio
+
+        // Configs
+        this.configs = {
+            mag: 1,
+            on: true,
+            placed: false,
+            pos: [],
+            pxRatio: pxRatio,
+            rad: 50 * pxRatio,
+            rad_default: 50 * pxRatio,
+            rad_inc: 5 * pxRatio,
+            rad_min: 0,
+            rad_max: 200 * pxRatio,
+            shape: 'circle',
+        }
     }
 
     /*
@@ -267,10 +294,10 @@ export default class Lensing {
             // Update
             this.overlay.canvas_actual.setAttribute('width', this.configs.rad * 2 + 'px');
             this.overlay.canvas_actual.setAttribute('height', this.configs.rad * 2 + 'px');
-            this.overlay.canvas_actual.style.width = this.configs.rad * 2 / this.overlay.scale + 'px';
-            this.overlay.canvas_actual.style.height = this.configs.rad * 2 / this.overlay.scale + 'px';
-            this.overlay.canvas_actual.style.left = (data.x - this.configs.rad) / this.overlay.scale + 'px';
-            this.overlay.canvas_actual.style.top = (data.y - this.configs.rad) / this.overlay.scale + 'px';
+            this.overlay.canvas_actual.style.width = this.configs.rad * 2 / this.configs.pxRatio + 'px';
+            this.overlay.canvas_actual.style.height = this.configs.rad * 2 / this.configs.pxRatio + 'px';
+            this.overlay.canvas_actual.style.left = (data.x - this.configs.rad) / this.configs.pxRatio + 'px';
+            this.overlay.canvas_actual.style.top = (data.y - this.configs.rad) / this.configs.pxRatio + 'px';
 
             // Clear s
             this.overlay.context.clearRect(0, 0,
@@ -483,8 +510,8 @@ export default class Lensing {
             }
 
             // Get some information from canvas
-            const x = e.layerX * this.overlay.scale;
-            const y = e.layerY * this.overlay.scale;
+            const x = e.layerX * this.configs.pxRatio;
+            const y = e.layerY * this.configs.pxRatio;
             this.configs.pos = [x, y];
         }
         this.manage_lens_update();
