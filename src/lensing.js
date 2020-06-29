@@ -278,6 +278,7 @@ export default class Lensing {
         // Pixel ratio
         const pxRatio = window.devicePixelRatio
 
+
         // Configs
         this.configs = {
             mag: 1,
@@ -285,11 +286,11 @@ export default class Lensing {
             placed: false,
             pos: [],
             pxRatio: pxRatio,
-            rad: 50 * pxRatio,
-            rad_default: 50 * pxRatio,
-            rad_inc: 5 * pxRatio,
+            rad: Math.round(50 * pxRatio),
+            rad_default: Math.round(50 * pxRatio),
+            rad_inc: Math.round(5 * pxRatio),
             rad_min: 0,
-            rad_max: 200 * pxRatio,
+            rad_max: Math.round(200 * pxRatio),
             shape: 'circle'
         }
     }
@@ -310,10 +311,10 @@ export default class Lensing {
             // Update overlay dims and position
             this.overlay.canvas_actual.setAttribute('width', this.configs.rad * 2 + 'px');
             this.overlay.canvas_actual.setAttribute('height', this.configs.rad * 2 + 'px');
-            this.overlay.canvas_actual.style.width = this.configs.rad * 2 / this.configs.pxRatio + 'px';
-            this.overlay.canvas_actual.style.height = this.configs.rad * 2 / this.configs.pxRatio + 'px';
-            this.overlay.canvas_actual.style.left = (data.x - this.configs.rad) / this.configs.pxRatio + 'px';
-            this.overlay.canvas_actual.style.top = (data.y - this.configs.rad) / this.configs.pxRatio + 'px';
+            this.overlay.canvas_actual.style.width = Math.round(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+            this.overlay.canvas_actual.style.height = Math.round(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+            this.overlay.canvas_actual.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
+            this.overlay.canvas_actual.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
 
             // Clear s
             this.overlay.context.clearRect(0, 0,
@@ -754,13 +755,13 @@ export default class Lensing {
     set_position(coords, isPoint = false) {
 
         // Get some cords for overlay
-        const x = coords[0] * this.configs.pxRatio;
-        const y = coords[1] * this.configs.pxRatio;
+        const x = Math.round(coords[0] * this.configs.pxRatio);
+        const y = Math.round(coords[1] * this.configs.pxRatio);
         this.configs.pos = [x, y];
         if (isPoint) {
             const reCoords = this.viewer.viewport.pixelFromPoint(coords);
-            const x = Math.round(reCoords.x) * this.configs.pxRatio;
-            const y = Math.round(reCoords.y) * this.configs.pxRatio;
+            const x = Math.round(reCoords.x * this.configs.pxRatio);
+            const y = Math.round(reCoords.y * this.configs.pxRatio);
             this.configs.pos = [x, y];
         }
 
