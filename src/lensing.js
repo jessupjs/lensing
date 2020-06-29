@@ -3,13 +3,19 @@ Lensing
  */
 
 import Lenses from './lenses';
+import icon from './assets/lensing_icon.svg'
 
 /*
 TODO -
- 1. Zoom quirks
-
+ 1. Gen zoom quirks
+ 2. Immediate filter repaint
 */
 
+/**
+ * @class Lensing
+ *
+ * @constructor
+ */
 export default class Lensing {
 
     // Class refs
@@ -17,7 +23,6 @@ export default class Lensing {
 
     // Interactive features
     button = null;
-    key_shift = false;
 
     // Components
     overlay = null;
@@ -29,13 +34,12 @@ export default class Lensing {
     // Position data
     position_data = {
         centerPoint: null,
-        eventPoint: null,
+        currentEvent: '',
         refPoint: null,
-        scrollPoint: null,
-        scrollCoords: [],
+        eventPoint: null,
+        screenCoords: [],
         zoom: 0,
-        zoomAux: 0,
-        zoomDiv: 0
+        zoomAux: 0
     };
 
     // Configs
@@ -71,8 +75,12 @@ export default class Lensing {
         this.init();
     }
 
-    /*
-    1. INIT
+    /**
+     * 1.
+     * @function init
+     * Initializes the viewers, overlay and lenses
+     *
+     * @returns void
      */
     init() {
 
@@ -89,14 +97,17 @@ export default class Lensing {
         // Build overlay and button
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
-        //this.button = this.build_button(); TODO - turned off for now
+        this.button = this.build_button();
 
         // Instantiate Filters, and send over current lens size
         this.lenses = new Lenses(this);
     }
 
-    /*
-    attach_events
+    /**
+     * @function attach_events
+     * Attaches event listeners to both viewers and the document
+     *
+     * @returns void
      */
     attach_events() {
 
@@ -110,15 +121,15 @@ export default class Lensing {
         this.viewer.addHandler('open', this.handle_viewer_open.bind(this));
         this.viewer.addHandler('pan', this.handle_viewer_pan.bind(this));
         this.viewer.addHandler('zoom', this.handle_viewer_zoom.bind(this));
+        this.viewer.addHandler('canvas-drag', this.handle_viewer_canvasdrag.bind(this));
 
         // Mouse-ing
-        this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseovermove.bind(this));
-        this.viewer.canvas.addEventListener('mousemove', this.handle_viewer_mouseovermove.bind(this));
+        this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
+        this.viewer.canvas.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
         this.viewer.canvas.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
 
         // Key-ing
         document.addEventListener('keydown', this.handle_viewer_keydown.bind(this));
-        document.addEventListener('keyup', this.handle_viewer_keyup.bind(this));
     }
 
     /*
@@ -279,19 +290,24 @@ export default class Lensing {
             rad_inc: 5 * pxRatio,
             rad_min: 0,
             rad_max: 200 * pxRatio,
-            shape: 'circle',
+            shape: 'circle'
         }
     }
 
-    /*
-    draw_lens
+    /**
+     * @function draw_lens
+     * Paints the overlay
+     *
+     * @param {any} data
+     *
+     * @returns void
      */
     draw_lens(data) {
 
         // Place in
         requestAnimationFrame(() => {
 
-            // Update
+            // Update overlay dims and position
             this.overlay.canvas_actual.setAttribute('width', this.configs.rad * 2 + 'px');
             this.overlay.canvas_actual.setAttribute('height', this.configs.rad * 2 + 'px');
             this.overlay.canvas_actual.style.width = this.configs.rad * 2 / this.configs.pxRatio + 'px';
@@ -303,50 +319,57 @@ export default class Lensing {
             this.overlay.context.clearRect(0, 0,
                 this.overlay.canvas_actual.width, this.overlay.canvas_actual.height);
 
-            // Save
-            this.overlay.context.save();
+            if (this.configs.on) {
 
-            // Filter
-            let filteredD = this.lenses.modify(data.d);
+                // Save
+                this.overlay.context.save();
 
-            // Convert to bitmap
-            createImageBitmap(filteredD).then(imgBitmap => {
-                // Clip
-                if (this.configs.shape === 'circle') {
+                // Filter
+                let filteredD = this.lenses.modify(data.d);
+
+                // Convert to bitmap
+                createImageBitmap(filteredD).then(imgBitmap => {
+
+                    // Clip
+                    if (this.configs.shape === 'circle') {
+                        this.overlay.context.beginPath();
+                        this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad, 0, Math.PI * 2);
+                        this.overlay.context.clip();
+                    }
+
+                    // Draw
+                    if (this.lenses.selections.magnifier.name === 'mag_standard') {
+                        this.overlay.context.drawImage(imgBitmap,
+                            0,
+                            0,
+                            this.configs.rad * 2,
+                            this.configs.rad * 2
+                        );
+                    } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+                        this.overlay.context.scale(1 / this.configs.mag, 1 / this.configs.mag)
+                        this.overlay.context.drawImage(imgBitmap,
+                            0,
+                            0,
+                            this.configs.rad * 2 * this.configs.mag,
+                            this.configs.rad * 2 * this.configs.mag
+                        );
+                    }
+
+                    // Restore
+                    this.overlay.context.restore();
+
+                    // Lens border / stroke
+                    this.overlay.context.strokeStyle = `white`;
                     this.overlay.context.beginPath();
-                    this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad, 0, Math.PI * 2);
-                    this.overlay.context.clip();
-                }
-                // Draw
-                if (this.lenses.selections.magnifier.name === 'mag_standard') {
-                    this.overlay.context.drawImage(imgBitmap,
-                        0,
-                        0,
-                        this.configs.rad * 2,
-                        this.configs.rad * 2
-                    );
-                } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
-                    this.overlay.context.scale(1 / this.configs.mag, 1 / this.configs.mag)
-                    this.overlay.context.drawImage(imgBitmap,
-                        0,
-                        0,
-                        this.configs.rad * 2 * this.configs.mag,
-                        this.configs.rad * 2 * this.configs.mag
-                    );
-                }
-                // Restore
-                this.overlay.context.restore();
+                    if (this.configs.shape === 'circle') {
+                        this.overlay.context.arc(this.configs.rad + 1, this.configs.rad + 1, this.configs.rad - 1, 0, Math.PI * 2);
+                    } else if (this.configs.shape === 'square') {
+                        this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
+                    }
+                    this.overlay.context.stroke();
+                });
 
-                // Lens border / stroke
-                this.overlay.context.strokeStyle = `white`;
-                this.overlay.context.beginPath();
-                if (this.configs.shape === 'circle') {
-                    this.overlay.context.arc(this.configs.rad + 1, this.configs.rad + 1, this.configs.rad - 1, 0, Math.PI * 2);
-                } else if (this.configs.shape === 'square') {
-                    this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
-                }
-                this.overlay.context.stroke();
-            });
+            }
         });
     }
 
@@ -359,224 +382,276 @@ export default class Lensing {
         this.lenses.update_filter(e.target.value)
     }
 
-    /*
-    handle_viewer_animation
+    /**
+     * @function handle_viewer_animation
+     * Manages hidden viewer zooming / positioning during zoom / pan events
+     *
+     * @returns voide
      */
-    handle_viewer_animation() {
+    handle_viewer_animation(e) {
 
         // Update some position data
         this.position_data.zoom = this.viewer.viewport.getZoom();
         this.position_data.zoomAux = this.viewer_aux.viewport.getZoom();
-        this.position_data.zoomDiv = this.position_data.zoomAux / this.position_data.zoom;
 
-        // Update lens
-        this.manage_lens_update();
+        // If panning (dragging)
+        //console.log('Animating', this.position_data.screenCoords)
+        if (this.position_data.screenCoords.length > 0) {
+            this.set_position(this.position_data.screenCoords);
+        } else {
+            this.manage_lens_update();
+        }
     }
 
-    /*
-    handle_viewer_keydown
+    /**
+     * @function handle_viewer_canvasdrag
+     * Manages drag
+     *
+     * @param {Event} e
+     *
+     * @returns void
+     */
+    handle_viewer_canvasdrag(e) {
+
+        // Get pos data from event
+        this.position_data.currentEvent = 'pan';
+        this.position_data.screenCoords = [Math.round(e.position.x), Math.round(e.position.y)];
+    }
+
+    /**
+     * @function handle_viewer_keydown
+     * Handles keyboard shortcuts
+     *
+     * @param {any} e
+     *
+     * @returns void
      */
     handle_viewer_keydown(e) {
 
-        // Check shift
-        if (e.keyCode === 16) {
-            this.key_shift = true;
+        // Lens filter
+        const keys_filter = ['{', '}', '|'];
+        if (keys_filter.includes(e.key)) {
+            // Specifics
+            if (e.key === '{') {
+                this.lenses.change_lens('prev', 'filter');
+            } else if (e.key === '}') {
+                this.lenses.change_lens('next', 'filter');
+            } else if (e.key === '|') {
+                this.lenses.change_lens('none', 'filter');
+            }
+            // Generics
+            this.manage_slider_update();
+            this.manage_lens_update();
         }
 
-        // SHIFT
-        if (this.key_shift) {
-            // Lens filter
-            const keys_filter = [220, 219, 221];
-            if (keys_filter.includes(e.keyCode)) {
-                if (e.keyCode === 220) {
-                    // '|'
-                    this.lenses.change_lens('none', 'filter');
-                } else if (e.keyCode === 219) {
-                    // '{'
-                    this.lenses.change_lens('prev', 'filter');
-                } else if (e.keyCode === 221) {
-                    // '}'
-                    this.lenses.change_lens('next', 'filter');
-                }
-                this.manage_slider_update();
-            }
-            // Lens shape
-            const keys_onOff = [76];
-            if (keys_onOff.includes(e.keyCode)) {
-                // 'L'
-                if (e.keyCode === 76) {
-                    if (this.configs.shape === 'circle') {
-                        this.configs.shape = 'square';
-                    } else if (this.configs.shape === 'square') {
-                        this.configs.shape = 'circle';
-                    }
+        // Lens shape
+        const keys_shape = ['L'];
+        if (keys_shape.includes(e.key)) {
+            // Specifics
+            if (e.key === 'L') {
+                if (this.configs.shape === 'circle') {
+                    this.configs.shape = 'square';
+                } else if (this.configs.shape === 'square') {
+                    this.configs.shape = 'circle';
                 }
             }
-        } else {
-            // Lens sizing
-            const keys_size = [220, 219, 221];
-            if (keys_size.includes(e.keyCode)) {
-                if (e.keyCode === 220) {
-                    // '\'
-                    this.configs.rad = this.configs.rad_default;
-                } else if (e.keyCode === 219) {
-                    // '['
-                    if (this.configs.rad - this.configs.rad_inc >= this.configs.rad_min) {
-                        this.configs.rad -= this.configs.rad_inc;
-                    }
-                } else if (e.keyCode === 221) {
-                    // ']'
-                    if (this.configs.rad + this.configs.rad_inc <= this.configs.rad_max) {
-                        this.configs.rad += this.configs.rad_inc;
-                    }
-                }
-            }
-            // Lens placement
-            const keys_dropFetch = [80];
-            if (keys_dropFetch.includes(e.keyCode)) {
-                // 'p'
-                if (e.keyCode === 80) {
-                    this.configs.placed = !this.configs.placed;
-                }
-            }
-            // Lens on
-            const keys_onOff = [76];
-            if (keys_onOff.includes(e.keyCode)) {
-                // 'l'
-                if (e.keyCode === 76) {
-                    this.configs.on = !this.configs.on;
-                }
-            }
-            // Lens magnification
-            const keys_mag = [77, 188, 190, 191];
-            if (keys_mag.includes(e.keyCode)) {
-                if (e.keyCode === 191) {
-                    // '/'
-                    this.configs.mag = this.lenses.selections.magnifier.settings.default;
-                } else if (e.keyCode === 188) {
-                    // ','
-                    if (this.configs.mag - this.lenses.selections.magnifier.settings.step >=
-                        this.lenses.selections.magnifier.settings.min) {
-                        this.configs.mag -= this.lenses.selections.magnifier.settings.step;
-                    }
-                } else if (e.keyCode === 190) {
-                    // '.'
-                    if (this.configs.mag + this.lenses.selections.magnifier.settings.step <=
-                        this.lenses.selections.magnifier.settings.max) {
-                        this.configs.mag += this.lenses.selections.magnifier.settings.step;
-                    }
-                } else if (e.keyCode === 77) {
-                    // 'm'
-                    this.lenses.change_lens('next', 'magnifier');
-                }
-
-                // Emulate event
-                this.position_data.refPoint = this.position_data.scrollPoint;
-                this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
-            }
+            // Generics
+            this.manage_lens_update();
         }
 
-        // Update lens
-        this.manage_lens_update();
-    }
+        // Lens on
+        const keys_onOff = ['l'];
+        if (keys_onOff.includes(e.key)) {
+            // Specifics
+            if (e.key === 'l') {
+                this.configs.on = !this.configs.on;
+            }
+            // Generics
+            this.manage_lens_update();
+        }
 
-    /*
-    handle_viewer_keyup
-     */
-    handle_viewer_keyup(e) {
-        // Check shift
-        if (e.keyCode === 16) {
-            this.key_shift = false;
+        // Lens sizing
+        const keys_size = ['[', ']', '\\'];
+        if (keys_size.includes(e.key)) {
+            // Specifics
+            if (e.key === '[') {
+                if (this.configs.rad - this.configs.rad_inc >= this.configs.rad_min) {
+                    this.configs.rad -= this.configs.rad_inc;
+                }
+            } else if (e.key === ']') {
+                if (this.configs.rad + this.configs.rad_inc <= this.configs.rad_max) {
+                    this.configs.rad += this.configs.rad_inc;
+                }
+            } else if (e.key === '\\') {
+                this.configs.rad = this.configs.rad_default;
+            }
+            // Generics
+            this.manage_lens_update();
+        }
+
+        // Lens placement
+        const keys_dropFetch = ['p'];
+        if (keys_dropFetch.includes(e.key)) {
+            // Specifics
+            if (e.key === 'p') {
+                this.configs.placed = !this.configs.placed;
+            }
+            // Generics
+            this.manage_lens_update();
+        }
+
+        // Lens magnification
+        const keys_mag = ['m', ',', '.', '/'];
+        if (keys_mag.includes(e.key)) {
+            // Specifics
+            if (e.key === 'm') {
+                this.lenses.change_lens('next', 'magnifier');
+            } else if (e.key === ',') {
+                if (this.configs.mag - this.lenses.selections.magnifier.settings.step >=
+                    this.lenses.selections.magnifier.settings.min) {
+                    this.configs.mag -= this.lenses.selections.magnifier.settings.step;
+                }
+            } else if (e.key === '.') {
+                if (this.configs.mag + this.lenses.selections.magnifier.settings.step <=
+                    this.lenses.selections.magnifier.settings.max) {
+                    this.configs.mag += this.lenses.selections.magnifier.settings.step;
+                }
+            } else if (e.key === '/') {
+                this.configs.mag = this.lenses.selections.magnifier.settings.default;
+            }
+            // Generics
+            this.position_data.refPoint = this.position_data.eventPoint;
+            this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
         }
     }
 
-    /*
-    handle_viewer_mouseovermove
+    /**
+     * @function handle_viewer_mouseover
+     * Turns on lens (if off), updates overlay and hidden viewer positions
+     *
+     * @param {Event} e
+     *
+     * @returns void
      */
-    handle_viewer_mouseovermove(e) {
+    handle_viewer_mouseover(e) {
 
-        // Check if lens on
+        // Turn on lens
+        this.configs.on = true;
+
+        // Set hidden viewer and overlay pos
+        this.position_data.screenCoords = [e.layerX, e.layerY]
+        this.set_position(this.position_data.screenCoords);
+
+        // Update if not placed
         if (!this.configs.placed) {
-
-            // Move to point
-            const point = new this.osd.Point(e.layerX, e.layerY);
-            this.position_data.scrollPoint = this.viewer.viewport.viewerElementToViewportCoordinates(point);
-            const gap = this.position_data.eventPoint.minus(this.position_data.scrollPoint).divide(this.configs.mag);
-            this.position_data.refPoint = this.position_data.scrollPoint.plus(gap);
-
-            if (this.position_data.refPoint && this.configs.mag > 1) {
-                // Emulate event
-                this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: true});
-            }
-
-            // Get some information from canvas
-            const x = e.layerX * this.configs.pxRatio;
-            const y = e.layerY * this.configs.pxRatio;
-            this.configs.pos = [x, y];
+            this.manage_lens_update();
         }
-        this.manage_lens_update();
     }
 
-    /*
-    handle_viewer_mouseout
+    /**
+     * @function handle_viewer_mousemove
+     * Updates overlay and hidden viewer positions
+     *
+     * @param {Event} e
+     *
+     * @returns void
      */
-    handle_viewer_mouseout(e) {
+    handle_viewer_mousemove(e) {
+
+        // Set hidden viewer and overlay pos
+        this.position_data.screenCoords = [e.layerX, e.layerY]
+        this.set_position(this.position_data.screenCoords);
+
+        // If not placed
         if (!this.configs.placed) {
-            this.hide_lens();
+            this.manage_lens_update();
         }
     }
 
-    /*
-    handle_viewer_open
+    /**
+     * @function handle_viewer_mouseout
+     * Turns off lens if not placed when mouse is outsider viewer
+     *
+     * @returns void
      */
-    handle_viewer_open(e) {
+    handle_viewer_mouseout() {
+
+        // If outside of viewer, turn off mouse
+        if (!this.configs.placed) {
+            this.configs.on = false;
+        }
+    }
+
+    /**
+     * @function handle_viewer_open
+     * Initializes position settings from center
+     *
+     * @returns void
+     */
+    handle_viewer_open() {
 
         // Defaults
         this.position_data.refPoint = this.viewer.viewport.getCenter(false);
-        this.position_data.eventPoint = this.viewer.viewport.getCenter(false);
         this.position_data.centerPoint = this.viewer.viewport.getCenter(false);
-        this.position_data.scrollPoint = this.viewer.viewport.getCenter(false);
+        this.position_data.eventPoint = this.viewer.viewport.getCenter(false);
         this.position_data.zoom = this.viewer.viewport.getZoom(true);
     }
 
-    /*
-    handle_viewer_pan
-     */
-    handle_viewer_pan(e) {
-        // Update zoom data
-        if (e.center) {
-            this.position_data.refPoint = e.center
-            this.position_data.eventPoint = e.center;
-        }
-
-        // Emulate event
-        this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: false});
-    }
-
-    /*
-    handle_viewer_zoom
+    /**
+     * @function handle_viewer_zoom
+     * Configures position data for zoom and raises hidden viewer click event
+     *
+     * @param {Event} e
+     *
+     * @returns null
      */
     handle_viewer_zoom(e) {
-        // Update zoom data
-        if (e.refPoint) {
-            this.position_data.refPoint = e.refPoint;
-            this.position_data.eventPoint = e.refPoint;
-        } else {
-            this.position_data.centerPoint = this.viewer.viewport.getCenter(false);
-            this.position_data.refPoint = this.position_data.centerPoint;
-            this.position_data.eventPoint = this.position_data.centerPoint;
-        }
-        this.position_data.zoom = e.zoom;
 
-        // Emulate event
-        this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: false});
+        // Update zoom data
+        this.position_data.zoom = e.zoom;
+        //console.log('Zooming', e.refPoint)
+        if (e.refPoint && e.refPoint.hasOwnProperty('x') && e.refPoint.hasOwnProperty('y')) {
+
+            //
+            this.position_data.currentEvent = 'zoom';
+            //this.position_data.refPoint = e.refPoint;
+            this.position_data.screenCoords = [];
+            //this.set_position(e.refPoint, true);
+
+            // Emulate event
+            this.position_data.refPoint = e.refPoint;
+            this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: false});
+        } else {
+            this.position_data.refPoint = this.viewer.viewport.getCenter(false);
+            //this.set_position(this.viewer.viewport.getCenter(false), true);
+        }
     }
 
-    /*
-    handle_viewer_aux_click
+    /**
+     * @function handle_viewer_pan
+     * Configures position data for pan
+     *
+     * @param {Event} e
+     *
+     * @returns null
+     */
+    handle_viewer_pan(e) {
+
+        // Update zoom data
+        //console.log('Panning', e.center)
+    }
+
+    /**
+     * @function handle_viewer_aux_click
+     * Adjusts zoom or pan based on an emulated event from scroll
+     *
+     * @param {Event} e
+     *
+     * @returns void
      */
     handle_viewer_aux_click(e) {
 
+        // Check if zoom or pan
         if (e.eventType === 'zoom' || !e.eventType) {
             if (this.position_data.zoom && this.position_data.refPoint
                 && this.position_data.refPoint.hasOwnProperty('x')
@@ -608,51 +683,52 @@ export default class Lensing {
         this.handle_viewer_aux_click(e);
     }
 
-    /*
-    hide_lens
+    /**
+     * @function manage_lens_update
+     * Defines position configurations before redraw
+     *
+     * @returns void
      */
-    hide_lens() {
+    manage_lens_update() {
 
-        // Clear
-        this.overlay.context.clearRect(0, 0, this.overlay.canvas.width, this.overlay.canvas.height);
-    }
+        // Check pos and placement
+        if (this.configs.pos.length > 0 && !this.configs.placed) {
 
-    /*
-    manage_lens_update
-     */
-    manage_lens_update(force = false) {
-        if (this.configs.on) {
-            if ((this.configs.pos.length > 0 && !this.configs.placed) || force) {
-                const ctx = this.viewer_aux_canvas.getContext('2d');
-                let d = null;
-                if (this.lenses.selections.magnifier.name === 'mag_standard') {
-                    d = ctx.getImageData(
-                        this.configs.pos[0] - this.configs.rad,
-                        this.configs.pos[1] - this.configs.rad,
-                        this.configs.rad * 2,
-                        this.configs.rad * 2
-                    );
-                } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
-                    d = ctx.getImageData(
-                        this.configs.pos[0] - this.configs.rad * this.configs.mag,
-                        this.configs.pos[1] - this.configs.rad * this.configs.mag,
-                        this.configs.rad * 2 * this.configs.mag,
-                        this.configs.rad * 2 * this.configs.mag
-                    );
-                }
-                this.draw_lens({
-                    x: this.configs.pos[0],
-                    y: this.configs.pos[1],
-                    d: d
-                });
+            // Get context, init data
+            const ctx = this.viewer_aux_canvas.getContext('2d');
+            let d = null;
+
+            // Respond to magnifaction
+            if (this.lenses.selections.magnifier.name === 'mag_standard') {
+                d = ctx.getImageData(
+                    this.configs.pos[0] - this.configs.rad,
+                    this.configs.pos[1] - this.configs.rad,
+                    this.configs.rad * 2,
+                    this.configs.rad * 2
+                );
+            } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+                d = ctx.getImageData(
+                    this.configs.pos[0] - this.configs.rad * this.configs.mag,
+                    this.configs.pos[1] - this.configs.rad * this.configs.mag,
+                    this.configs.rad * 2 * this.configs.mag,
+                    this.configs.rad * 2 * this.configs.mag
+                );
             }
-        } else {
-            this.hide_lens();
+
+            // Draw
+            this.draw_lens({
+                x: this.configs.pos[0],
+                y: this.configs.pos[1],
+                d: d
+            });
         }
     }
 
-    /*
-    manage_slider_update
+    /**
+     * @function manage_slider_update
+     * Updates slider in button bar
+     *
+     * @returns null
      */
     manage_slider_update() {
 
@@ -664,6 +740,42 @@ export default class Lensing {
         this.button.slider.max = filter.settings.max;
         this.button.slider.value = filter.settings.default;
         this.button.slider.step = filter.settings.step;
+    }
+
+    /**
+     * @function set_position
+     * Converts mouse coords to viewport point for hidden layer if mag on, sets coordinate config for overlay
+     *
+     * @param {array} coords
+     * @param {isPoint} boolean
+     *
+     * @returns void
+     */
+    set_position(coords, isPoint = false) {
+
+        // Get some cords for overlay
+        const x = coords[0] * this.configs.pxRatio;
+        const y = coords[1] * this.configs.pxRatio;
+        this.configs.pos = [x, y];
+        if (isPoint) {
+            const reCoords = this.viewer.viewport.pixelFromPoint(coords);
+            const x = Math.round(reCoords.x) * this.configs.pxRatio;
+            const y = Math.round(reCoords.y) * this.configs.pxRatio;
+            this.configs.pos = [x, y];
+        }
+
+        // Transform coordinates to scroll point
+        const point = new this.osd.Point(coords[0], coords[1]);
+        this.position_data.eventPoint = isPoint ? coords : this.viewer.viewport.viewerElementToViewportCoordinates(point);
+
+        // Check for event point before calulating reference point
+        this.position_data.centerPoint = this.viewer.viewport.getCenter(true);
+        const gap = this.position_data.centerPoint.minus(this.position_data.eventPoint).divide(this.configs.mag);
+        this.position_data.refPoint = this.position_data.eventPoint.plus(gap);
+
+        // Emulate event
+        this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: true});
+        //this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
     }
 
 }
