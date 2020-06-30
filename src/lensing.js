@@ -270,14 +270,16 @@ export default class Lensing {
         };
     }
 
-    /*
-    device_config
+    /**
+     * @function device_config
+     * Updates configurations using device pixel ratio
+     *
+     * @returns void
      */
     device_config() {
 
         // Pixel ratio
-        const pxRatio = window.devicePixelRatio
-
+        const pxRatio = window.devicePixelRatio;
 
         // Configs
         this.configs = {
@@ -311,8 +313,8 @@ export default class Lensing {
             // Update overlay dims and position
             this.overlay.canvas_actual.setAttribute('width', this.configs.rad * 2 + 'px');
             this.overlay.canvas_actual.setAttribute('height', this.configs.rad * 2 + 'px');
-            this.overlay.canvas_actual.style.width = Math.round(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-            this.overlay.canvas_actual.style.height = Math.round(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+            this.overlay.canvas_actual.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+            this.overlay.canvas_actual.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
             this.overlay.canvas_actual.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
             this.overlay.canvas_actual.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
 
@@ -396,7 +398,6 @@ export default class Lensing {
         this.position_data.zoomAux = this.viewer_aux.viewport.getZoom();
 
         // If panning (dragging)
-        //console.log('Animating', this.position_data.screenCoords)
         if (this.position_data.screenCoords.length > 0) {
             this.set_position(this.position_data.screenCoords);
         } else {
@@ -423,7 +424,7 @@ export default class Lensing {
      * @function handle_viewer_keydown
      * Handles keyboard shortcuts
      *
-     * @param {any} e
+     * @param {Event} e
      *
      * @returns void
      */
@@ -610,7 +611,6 @@ export default class Lensing {
 
         // Update zoom data
         this.position_data.zoom = e.zoom;
-        //console.log('Zooming', e.refPoint)
         if (e.refPoint && e.refPoint.hasOwnProperty('x') && e.refPoint.hasOwnProperty('y')) {
 
             //
@@ -638,8 +638,6 @@ export default class Lensing {
      */
     handle_viewer_pan(e) {
 
-        // Update zoom data
-        //console.log('Panning', e.center)
     }
 
     /**
@@ -708,11 +706,12 @@ export default class Lensing {
                     this.configs.rad * 2
                 );
             } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+                console.log(this.configs.mag)
                 d = ctx.getImageData(
                     this.configs.pos[0] - this.configs.rad * this.configs.mag,
                     this.configs.pos[1] - this.configs.rad * this.configs.mag,
-                    this.configs.rad * 2 * this.configs.mag,
-                    this.configs.rad * 2 * this.configs.mag
+                    Math.round(this.configs.rad * 2 * this.configs.mag),
+                    Math.round(this.configs.rad * 2 * this.configs.mag)
                 );
             }
 
