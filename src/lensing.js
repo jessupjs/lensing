@@ -3,7 +3,10 @@ Lensing
  */
 
 import Lenses from './lenses';
-import icon from './assets/lensing_icon.svg'
+import Viewfinder from './viewfinder'
+import Icon from './assets/lensing_icon.svg'
+import IconKeyboard from './assets/lensing_keyboard.svg'
+import IconFilterConfig from './assets/lensing_filter_config.svg'
 
 /*
 TODO -
@@ -20,6 +23,7 @@ export default class Lensing {
 
     // Class refs
     lenses = null;
+    viewfinder = null;
 
     // Interactive features
     button = null;
@@ -48,6 +52,8 @@ export default class Lensing {
         on: true,
         placed: false,
         pos: [],
+        px: '',
+        pxData: '',
         pxRatio: 1,
         rad: 100,
         rad_default: 100,
@@ -57,16 +63,14 @@ export default class Lensing {
         shape: 'circle',
     }
 
-
-    // Configs
-
     /*
     CONSTRUCTOR
      */
-    constructor(_osd, _viewer, _viewer_config) {
+    constructor(_osd, _viewer, _viewer_config, _data = [], _data_config = null) {
         this.osd = _osd;
         this.viewer = _viewer;
         this.viewer_config = _viewer_config;
+        this.data = _data;
 
         // Set lensing configs
         this.device_config();
@@ -97,10 +101,14 @@ export default class Lensing {
         // Build overlay and button
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
-        this.button = this.build_button();
+        //this.button = this.build_button();
 
-        // Instantiate Filters, and send over current lens size
+        // Instantiate Filters
         this.lenses = new Lenses(this);
+
+        // Instantiate Viewfinder
+        this.viewfinder = new Viewfinder(this);
+
     }
 
     /**
@@ -132,8 +140,11 @@ export default class Lensing {
         document.addEventListener('keydown', this.handle_viewer_keydown.bind(this));
     }
 
-    /*
-    build_button
+    /**
+     * @function build_button
+     * Builds the button used as a dock for lensing
+     *
+     * @ returns Object
      */
     build_button() {
 
@@ -155,31 +166,33 @@ export default class Lensing {
         this.viewer.canvas.parentElement.append(container);
 
         // Build icon
-        const icon = document.createElement('img');
-        icon.setAttribute('src', './assets/lensing_icon.svg');
-        icon.setAttribute('alt', 'Lensing Icon');
+        // Add the image to our existing div.
+        const icon = new Image();
+        icon.src = Icon;
+        icon.alt = 'Lensing Icon';
         icon.setAttribute('style', `height: ${iconW}px; width: ${iconW}px; `
             + `position: relative; margin: ${iconPad}px;`
         );
-        container.append(icon);
+        container.appendChild(icon);
 
         // Build iconKeyboard
-        const iconKeyboard = document.createElement('img');
-        iconKeyboard.setAttribute('src', './assets/lensing_keyboard.svg');
-        iconKeyboard.setAttribute('alt', 'Keyboard Icon');
+        const iconKeyboard = new Image();
+        iconKeyboard.src = IconKeyboard;
+        iconKeyboard.alt = 'Keyboard Icon';
         iconKeyboard.setAttribute('style', `height: ${iconLilW}px; width: ${iconLilW}px; `
             + `position: relative; margin: ${iconPad / 2}px;`
         );
-        container.append(iconKeyboard);
+        container.appendChild(iconKeyboard);
+        IconFilterConfig
 
         // Build iconFilterConfig
-        const iconFilterConfig = document.createElement('img');
-        iconFilterConfig.setAttribute('src', './assets/lensing_filter_config.svg');
-        iconFilterConfig.setAttribute('alt', 'Keyboard Icon');
+        const iconFilterConfig = new Image();
+        iconFilterConfig.src = IconFilterConfig;
+        iconFilterConfig.alt = 'Keyboard Icon';
         iconFilterConfig.setAttribute('style', `height: ${iconLilW}px; width: ${iconLilW}px; `
             + `position: relative; margin: ${iconPad / 2}px;`
         );
-        container.append(iconFilterConfig);
+        container.appendChild(iconFilterConfig);
 
         // Build slider - TODO: style the range handle
         const slider = document.createElement('input');
@@ -196,7 +209,7 @@ export default class Lensing {
         container.append(slider);
 
         // Add event
-        slider.addEventListener('change', this.handle_slider_change.bind(this));
+        // TODO slider.addEventListener('change', this.handle_slider_change.bind(this));
 
         // Return
         return {
@@ -205,8 +218,11 @@ export default class Lensing {
 
     }
 
-    /*
-    build_hidden_viewer
+    /**
+     * @function build_hidden_viewer
+     * Builds a hidden (aux) viewer that is used to project filtered / magnified data
+     *
+     * @returns any
      */
     build_hidden_viewer() {
 
@@ -228,8 +244,14 @@ export default class Lensing {
         return viewer_aux;
     }
 
-    /*
-    build_overlay
+    /**
+     * @function build_overlay
+     * Builds overlay, including canvas and svg
+     *
+     * @param {string} id
+     * @param {array} dims
+     *
+     * @returns any
      */
     build_overlay(id, dims) {
 
@@ -242,15 +264,6 @@ export default class Lensing {
         // Append container
         this.viewer.canvas.append(container);
 
-        // Build canvas (actually div, imitating OpenSD's structure)
-        const canvas = document.createElement('div');
-        canvas.setAttribute('class', `overlay_canvas_${id} overlay_canvas`);
-        canvas.setAttribute('style',
-            `height: 100%; pointer-events: none; position: absolute; width: 100%`);
-
-        // Append canvas
-        container.append(canvas)
-
         // Build actualCanvas
         const actualCanvas = document.createElement('canvas');
         actualCanvas.setAttribute('width', `${dims[0] * this.configs.pxRatio}`);
@@ -259,12 +272,11 @@ export default class Lensing {
             'height: 100%; pointer-events: none; position: absolute; width: 100%;');
 
         // Append actualCanvas to container, container to viewer
-        canvas.append(actualCanvas);
+        container.append(actualCanvas);
 
         // Return
         return {
-            canvas_actual: actualCanvas,
-            canvas: canvas,
+            canvas: actualCanvas,
             container: container,
             context: actualCanvas.getContext('2d')
         };
@@ -282,19 +294,11 @@ export default class Lensing {
         const pxRatio = window.devicePixelRatio;
 
         // Configs
-        this.configs = {
-            mag: 1,
-            on: true,
-            placed: false,
-            pos: [],
-            pxRatio: pxRatio,
-            rad: Math.round(50 * pxRatio),
-            rad_default: Math.round(50 * pxRatio),
-            rad_inc: Math.round(5 * pxRatio),
-            rad_min: 0,
-            rad_max: Math.round(200 * pxRatio),
-            shape: 'circle'
-        }
+        this.configs.pxRatio = pxRatio;
+        this.configs.rad = Math.round(50 * pxRatio);
+        this.configs.rad_default = Math.round(50 * pxRatio);
+        this.configs.rad_inc = Math.round(5 * pxRatio);
+        this.configs.rad_max = Math.round(200 * pxRatio);
     }
 
     /**
@@ -310,17 +314,20 @@ export default class Lensing {
         // Place in
         requestAnimationFrame(() => {
 
+            // Update viewfinder
+            this.viewfinder.wrangle();
+
             // Update overlay dims and position
-            this.overlay.canvas_actual.setAttribute('width', this.configs.rad * 2 + 'px');
-            this.overlay.canvas_actual.setAttribute('height', this.configs.rad * 2 + 'px');
-            this.overlay.canvas_actual.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-            this.overlay.canvas_actual.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-            this.overlay.canvas_actual.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
-            this.overlay.canvas_actual.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
+            this.overlay.canvas.setAttribute('width', this.configs.rad * 2 + 'px');
+            this.overlay.canvas.setAttribute('height', this.configs.rad * 2 + 'px');
+            this.overlay.canvas.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+            this.overlay.canvas.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+            this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
+            this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
 
             // Clear s
             this.overlay.context.clearRect(0, 0,
-                this.overlay.canvas_actual.width, this.overlay.canvas_actual.height);
+                this.overlay.canvas.width, this.overlay.canvas.height);
 
             if (this.configs.on) {
 
@@ -363,9 +370,10 @@ export default class Lensing {
 
                     // Lens border / stroke
                     this.overlay.context.strokeStyle = `white`;
+                    this.overlay.context.strokeWidth = `2px`;
                     this.overlay.context.beginPath();
                     if (this.configs.shape === 'circle') {
-                        this.overlay.context.arc(this.configs.rad + 1, this.configs.rad + 1, this.configs.rad - 1, 0, Math.PI * 2);
+                        this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad - 1, 0, Math.PI * 2);
                     } else if (this.configs.shape === 'square') {
                         this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
                     }
@@ -389,7 +397,7 @@ export default class Lensing {
      * @function handle_viewer_animation
      * Manages hidden viewer zooming / positioning during zoom / pan events
      *
-     * @returns voide
+     * @returns void
      */
     handle_viewer_animation(e) {
 
@@ -508,6 +516,7 @@ export default class Lensing {
             // Specifics
             if (e.key === 'm') {
                 this.lenses.change_lens('next', 'magnifier');
+                this.configs.mag = this.lenses.selections.magnifier.settings.default;
             } else if (e.key === ',') {
                 if (this.configs.mag - this.lenses.selections.magnifier.settings.step >=
                     this.lenses.selections.magnifier.settings.min) {
@@ -541,7 +550,10 @@ export default class Lensing {
         this.configs.on = true;
 
         // Set hidden viewer and overlay pos
-        this.position_data.screenCoords = [e.layerX, e.layerY]
+        this.position_data.screenCoords = [
+            e.clientX - this.viewer_aux_canvas.getBoundingClientRect().x,
+            e.clientY - this.viewer_aux_canvas.getBoundingClientRect().y
+        ];
         this.set_position(this.position_data.screenCoords);
 
         // Update if not placed
@@ -561,7 +573,10 @@ export default class Lensing {
     handle_viewer_mousemove(e) {
 
         // Set hidden viewer and overlay pos
-        this.position_data.screenCoords = [e.layerX, e.layerY]
+        this.position_data.screenCoords = [
+            e.clientX - this.viewer_aux_canvas.getBoundingClientRect().x,
+            e.clientY - this.viewer_aux_canvas.getBoundingClientRect().y
+        ];
         this.set_position(this.position_data.screenCoords);
 
         // If not placed
@@ -706,13 +721,17 @@ export default class Lensing {
                     this.configs.rad * 2
                 );
             } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
-                console.log(this.configs.mag)
                 d = ctx.getImageData(
                     this.configs.pos[0] - this.configs.rad * this.configs.mag,
                     this.configs.pos[1] - this.configs.rad * this.configs.mag,
                     Math.round(this.configs.rad * 2 * this.configs.mag),
                     Math.round(this.configs.rad * 2 * this.configs.mag)
                 );
+            }
+
+            // If data config to color
+            if (this.data.length > 0) {
+                this.set_pixel(ctx);
             }
 
             // Draw
@@ -736,10 +755,49 @@ export default class Lensing {
         const filter = this.lenses.selections.filter;
 
         // Update button slider
-        this.button.slider.min = filter.settings.min;
+        /* TODO this.button.slider.min = filter.settings.min;
         this.button.slider.max = filter.settings.max;
         this.button.slider.value = filter.settings.default;
-        this.button.slider.step = filter.settings.step;
+        this.button.slider.step = filter.settings.step;*/
+    }
+
+    /**
+     * @function set_pixel
+     * Sets pixel for data configured for color
+     *
+     * @return void
+     */
+    set_pixel(ctx) {
+
+        // Get single pixel info TODO - PoC work
+        const px = ctx.getImageData(
+            this.configs.pos[0],
+            this.configs.pos[1],
+            1,
+            1
+        );
+        this.configs.px = px.data[0] + '_' + px.data[1] + '_' + px.data[2]
+        let selected = null;
+        let diff = 255 * 3;
+        this.data.forEach(d => {
+            // Measure difference
+            // const currentDiff = Math.abs(px.data[0] + px.data[1] + px.data[2] - (+d.r + +d.g + +d.b));
+            const r_mean = (px.data[0] + +d.r) / 2;
+            const r_diff = px.data[0] - +d.r;
+            const g_diff = px.data[1] - +d.g;
+            const b_diff = px.data[2] - +d.b;
+            const cDiff = Math.sqrt(
+                (2 + r_mean / 256) * r_diff ** 2
+                + 4 * g_diff ** 2
+                + (2 + (255 - r_mean) / 256) * b_diff ** 2
+            );
+            // If smaller difference
+            if (cDiff < diff) {
+                diff = cDiff;
+                selected = d;
+            }
+        })
+        this.configs.pxData = selected;
     }
 
     /**
@@ -747,7 +805,7 @@ export default class Lensing {
      * Converts mouse coords to viewport point for hidden layer if mag on, sets coordinate config for overlay
      *
      * @param {array} coords
-     * @param {isPoint} boolean
+     * @param {boolean} isPoint
      *
      * @returns void
      */
@@ -775,7 +833,6 @@ export default class Lensing {
 
         // Emulate event
         this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: true});
-        //this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
     }
 
 }

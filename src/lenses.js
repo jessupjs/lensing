@@ -4,6 +4,8 @@ LFilters
    - https://github.com/usnistgov/OpenSeadragonFiltering/blob/master/openseadragon-filtering.js
  + Fisheye magnification demo from jOloga
    - https://codepen.io/jOlga/pen/KyQMQW?editors=0010
+ + Color differences
+   - https://www.compuphase.com/cmetric.htm
  */
 
 export default class Lenses {
@@ -141,6 +143,59 @@ export default class Lenses {
             fill: 'rgba(255, 255, 255, 0)',
             stroke: 'rgba(0, 0, 0, 1)'
         },
+        // data_rgb
+        /* TODO {
+            name: 'fil_data_rgb',
+            vis_name: 'DataRgb',
+            settings: {
+                active: 1,
+                default: 1,
+                max: 1,
+                min: 0,
+                step: 1
+            },
+            update: (i, index) => {
+                // See if matches selected
+                let selected = null;
+                let diff = 255 * 3;
+                // TODO - look for alternative
+                this.lensing.data.forEach((d, j) => {
+                    /!*const currentDiff = Math.abs(
+                        this.img_data.copy.data[i]
+                        + this.img_data.copy.data[i + 1]
+                        + this.img_data.copy.data[i + 2]
+                        - (+d.r + +d.g + +d.b)
+                    );*!/
+                    const r_mean = (this.img_data.copy.data[i] + +d.r) / 2;
+                    const r_diff = this.img_data.copy.data[i] - +d.r;
+                    const g_diff = this.img_data.copy.data[i + 1] - +d.g;
+                    const b_diff = this.img_data.copy.data[i + 2] - +d.b;
+                    const cDiff = Math.sqrt(
+                        (2 + r_mean / 256) * r_diff ** 2
+                        + 4 * g_diff ** 2
+                        + (2 + (255 - r_mean) / 256) * b_diff ** 2
+                    );
+                    // If smaller difference
+                    if (cDiff < diff) {
+                        diff = cDiff;
+                        selected = d;
+                    }
+                });
+                if (selected.name === this.lensing.configs.pxData.name) {
+                    this.img_data.copy.data[i] = this.lensing.configs.pxData.r;
+                    this.img_data.copy.data[i + 1] = this.lensing.configs.pxData.g;
+                    this.img_data.copy.data[i + 2] = this.lensing.configs.pxData.b;
+                } else {
+                    this.img_data.copy.data[i] = this.img_data.copy.data[i] + 255 / 2;
+                    this.img_data.copy.data[i + 1] = this.img_data.copy.data[i] + 255 / 2;
+                    this.img_data.copy.data[i + 2] = this.img_data.copy.data[i] + 255 / 2;
+                }
+                // Magnify
+                this.selections.magnifier.update(i, index);
+            },
+            fill: 'rgba(255, 255, 255, 0)',
+            stroke: 'rgba(0, 0, 0, 1)'
+        },*/
         // Grayscale
         {
             name: 'fil_grayscale',
