@@ -714,18 +714,20 @@ export default class Lensing {
 
             // Respond to magnifaction
             if (this.lenses.selections.magnifier.name === 'mag_standard') {
+                let xy = this.configs.rad * 2;
                 d = ctx.getImageData(
                     this.configs.pos[0] - this.configs.rad,
                     this.configs.pos[1] - this.configs.rad,
-                    this.configs.rad * 2,
-                    this.configs.rad * 2
+                    xy,
+                    xy
                 );
             } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+                let xy = Math.round(this.configs.rad * 2 * this.configs.mag);
                 d = ctx.getImageData(
                     this.configs.pos[0] - this.configs.rad * this.configs.mag,
                     this.configs.pos[1] - this.configs.rad * this.configs.mag,
-                    Math.round(this.configs.rad * 2 * this.configs.mag),
-                    Math.round(this.configs.rad * 2 * this.configs.mag)
+                    xy,
+                    xy
                 );
             }
 

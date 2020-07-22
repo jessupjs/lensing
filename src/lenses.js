@@ -74,6 +74,7 @@ export default class Lenses {
         // Return modified image data
         const copyData = new Uint8ClampedArray(this.img_data.copy.data);
         const copyImageData = new ImageData(copyData, this.img_data.orig.width, this.img_data.orig.height);
+        // console.log(copyImageData, Math.sqrt(copyImageData.data.length / 4))
         return copyImageData;
     }
 
@@ -334,7 +335,8 @@ export default class Lenses {
                 default: 1,
                 max: 2,
                 min: 1,
-                step: 0.25},
+                step: 0.5
+            },
             update: (i, index) => {
                 // Add to copy index
                 this.img_data.copy_indexed.push([
@@ -353,7 +355,7 @@ export default class Lenses {
                     for (let j = 0; j < result.length; j++) {
                         const reIndex = 4 * j;
                         if (result[j]) {
-                            this.img_data.copy.data[reIndex + 0] = result[j][0];
+                            this.img_data.copy.data[reIndex] = result[j][0];
                             this.img_data.copy.data[reIndex + 1] = result[j][1];
                             this.img_data.copy.data[reIndex + 2] = result[j][2];
                             this.img_data.copy.data[reIndex + 3] = result[j][3];
