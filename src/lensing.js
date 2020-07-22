@@ -370,7 +370,7 @@ export default class Lensing {
 
                     // Lens border / stroke
                     this.overlay.context.strokeStyle = `white`;
-                    this.overlay.context.strokeWidth = `2px`;
+                    this.overlay.context.lineWidth = 1;
                     this.overlay.context.beginPath();
                     if (this.configs.shape === 'circle') {
                         this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad - 1, 0, Math.PI * 2);
