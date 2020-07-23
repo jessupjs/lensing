@@ -33,7 +33,7 @@ export default class Viewfinder {
         h: 0,
         r: 0,
         rPointer: 0,
-        rPointerExt: 20,
+        rPointerExt: 25,
         w: 0,
     };
 
@@ -91,7 +91,30 @@ export default class Viewfinder {
             .attr('height', vis.configs.boxH)
             .attr('fill', 'none')
             .attr('stroke', 'rgba(255, 255, 255, 1)')
-            .attr('stroke-width', '1px');
+            .attr('stroke-width', '0.5px');
+        vis.els.boxG.append('text')
+            .attr('class', 'viewfinder_box_text viewfinder_box_text_a')
+            .attr('fill', 'white')
+            .attr('x', `${vis.configs.boxW / 2}px`)
+            .attr('y', `${Math.round(vis.configs.boxH * 1 / 3)}px`)
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .style('font-family', 'sans-serif')
+            .style('font-size', '12px')
+            .style('font-weight', 'lighter')
+            .text('Data Placeholder 1')
+        vis.els.boxG.append('text')
+            .attr('class', 'viewfinder_box_text viewfinder_box_text_b')
+            .attr('fill', 'white')
+            .attr('x', `${vis.configs.boxW / 2}px`)
+            .attr('y', `${Math.round(vis.configs.boxH * 2 / 3)}px`)
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .style('font-family', 'sans-serif')
+            .style('font-size', '11px')
+            .style('font-style', 'italic')
+            .style('font-weight', 'lighter')
+            .text('1-234-567-8910')
 
     }
 
@@ -176,6 +199,24 @@ export default class Viewfinder {
             return [x, y];
         }
 
+    }
+
+    /**
+     * @function update_box_text
+     * Updates the text from data
+     *
+     * @param {Object} d
+     *
+     */
+    update_box_test(d) {
+        // Define this
+        const vis = this;
+
+        // Update
+        vis.els.boxG.select('.viewfinder_box_text_a')
+            .text(`Color Index #${d.index}`);
+        vis.els.boxG.select('.viewfinder_box_text_b')
+            .text(`rgb(${d.r}, ${d.g}, ${d.b})`);
     }
 
 

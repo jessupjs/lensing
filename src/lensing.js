@@ -2,16 +2,13 @@
 Lensing
  */
 
+import Controls from './controls';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder'
-import Icon from './assets/lensing_icon.svg'
-import IconKeyboard from './assets/lensing_keyboard.svg'
-import IconFilterConfig from './assets/lensing_filter_config.svg'
 
 /*
 TODO -
- 1. Gen zoom quirks
- 2. Immediate filter repaint
+  - Add in rotate
 */
 
 /**
@@ -22,11 +19,9 @@ TODO -
 export default class Lensing {
 
     // Class refs
+    controls = null;
     lenses = null;
     viewfinder = null;
-
-    // Interactive features
-    button = null;
 
     // Components
     overlay = null;
@@ -98,13 +93,15 @@ export default class Lensing {
         // Add event listeners to viewer
         this.attach_events();
 
-        // Build overlay and button
+        // Build overlay
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
-        //this.button = this.build_button();
 
         // Instantiate Filters
         this.lenses = new Lenses(this);
+
+        // Instantiate controls
+        this.controls = new Controls(this);
 
         // Instantiate Viewfinder
         this.viewfinder = new Viewfinder(this);
@@ -138,84 +135,6 @@ export default class Lensing {
 
         // Key-ing
         document.addEventListener('keydown', this.handle_viewer_keydown.bind(this));
-    }
-
-    /**
-     * @function build_button
-     * Builds the button used as a dock for lensing
-     *
-     * @ returns Object
-     */
-    build_button() {
-
-        // Configs
-        const w = 38;
-        const iconW = 28;
-        const iconLilW = 16;
-        const iconPad = (w - iconW) / 2;
-        const sliderWH = [iconW, iconW * 5];
-
-        // Build container
-        const container = document.createElement('div');
-        container.setAttribute('style', `height: 100%; width: ${w}px; `
-            + `position: absolute; right: 0; top: 0; `
-            + `display: flex; flex-flow: column nowrap; align-items: center;`
-        );
-
-        // Append img
-        this.viewer.canvas.parentElement.append(container);
-
-        // Build icon
-        // Add the image to our existing div.
-        const icon = new Image();
-        icon.src = Icon;
-        icon.alt = 'Lensing Icon';
-        icon.setAttribute('style', `height: ${iconW}px; width: ${iconW}px; `
-            + `position: relative; margin: ${iconPad}px;`
-        );
-        container.appendChild(icon);
-
-        // Build iconKeyboard
-        const iconKeyboard = new Image();
-        iconKeyboard.src = IconKeyboard;
-        iconKeyboard.alt = 'Keyboard Icon';
-        iconKeyboard.setAttribute('style', `height: ${iconLilW}px; width: ${iconLilW}px; `
-            + `position: relative; margin: ${iconPad / 2}px;`
-        );
-        container.appendChild(iconKeyboard);
-        IconFilterConfig
-
-        // Build iconFilterConfig
-        const iconFilterConfig = new Image();
-        iconFilterConfig.src = IconFilterConfig;
-        iconFilterConfig.alt = 'Keyboard Icon';
-        iconFilterConfig.setAttribute('style', `height: ${iconLilW}px; width: ${iconLilW}px; `
-            + `position: relative; margin: ${iconPad / 2}px;`
-        );
-        container.appendChild(iconFilterConfig);
-
-        // Build slider - TODO: style the range handle
-        const slider = document.createElement('input');
-        slider.setAttribute('type', 'range');
-        slider.setAttribute('min', '0');
-        slider.setAttribute('max', '255');
-        slider.setAttribute('value', '127');
-        slider.setAttribute('step', '1');
-        slider.setAttribute('style', `width: ${sliderWH[1]}px; height: ${2}px; `
-            + `position: relative; margin-top: ${sliderWH[1] / 2 + 10}px; `
-            + `-webkit-appearance: none; appearance: none; transform: rotate(90deg); outline: white; `
-            + `background-color: black;`
-        );
-        container.append(slider);
-
-        // Add event
-        // TODO slider.addEventListener('change', this.handle_slider_change.bind(this));
-
-        // Return
-        return {
-            slider: slider
-        };
-
     }
 
     /**
@@ -382,15 +301,6 @@ export default class Lensing {
 
             }
         });
-    }
-
-    /*
-    handle_slider_change
-     */
-    handle_slider_change(e) {
-
-        // Update val
-        this.lenses.update_filter(e.target.value)
     }
 
     /**
@@ -747,7 +657,7 @@ export default class Lensing {
 
     /**
      * @function manage_slider_update
-     * Updates slider in button bar
+     * Updates slider in controls bar
      *
      * @returns null
      */
@@ -756,11 +666,10 @@ export default class Lensing {
         // Get filter
         const filter = this.lenses.selections.filter;
 
-        // Update button slider
-        /* TODO this.button.slider.min = filter.settings.min;
-        this.button.slider.max = filter.settings.max;
-        this.button.slider.value = filter.settings.default;
-        this.button.slider.step = filter.settings.step;*/
+        // Update controls slider
+        this.controls.slider.max = filter.settings.max;
+        this.controls.slider.value = filter.settings.default;
+        this.controls.slider.step = filter.settings.step;
     }
 
     /**

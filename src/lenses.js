@@ -145,7 +145,7 @@ export default class Lenses {
             stroke: 'rgba(0, 0, 0, 1)'
         },
         // data_rgb
-        /* TODO {
+        {
             name: 'fil_data_rgb',
             vis_name: 'DataRgb',
             settings: {
@@ -161,12 +161,7 @@ export default class Lenses {
                 let diff = 255 * 3;
                 // TODO - look for alternative
                 this.lensing.data.forEach((d, j) => {
-                    /!*const currentDiff = Math.abs(
-                        this.img_data.copy.data[i]
-                        + this.img_data.copy.data[i + 1]
-                        + this.img_data.copy.data[i + 2]
-                        - (+d.r + +d.g + +d.b)
-                    );*!/
+
                     const r_mean = (this.img_data.copy.data[i] + +d.r) / 2;
                     const r_diff = this.img_data.copy.data[i] - +d.r;
                     const g_diff = this.img_data.copy.data[i + 1] - +d.g;
@@ -193,10 +188,12 @@ export default class Lenses {
                 }
                 // Magnify
                 this.selections.magnifier.update(i, index);
+                // Pass data to viewfinder
+                this.lensing.viewfinder.update_box_test(this.lensing.configs.pxData)
             },
             fill: 'rgba(255, 255, 255, 0)',
             stroke: 'rgba(0, 0, 0, 1)'
-        },*/
+        },
         // Grayscale
         {
             name: 'fil_grayscale',
