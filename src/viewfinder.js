@@ -10,7 +10,7 @@ export default class Viewfinder {
 
     // Data
     data = null;
-    annos = true;
+    on = false;
 
     // Elements
     els = {
@@ -78,7 +78,8 @@ export default class Viewfinder {
         vis.els.radialG = vis.els.g.append('g')
             .attr('class', 'viewfinder_radial_g');
         vis.els.dataPointG = vis.els.radialG.append('g')
-            .attr('class', 'viewfinder_data_point_g');
+            .attr('class', 'viewfinder_data_point_g')
+            .style('visibility', 'hidden');
         vis.els.dataPointG.append('path')
             .attr('fill', 'none')
             .attr('stroke', 'rgba(255, 255, 255, 1)')
@@ -96,13 +97,12 @@ export default class Viewfinder {
             .attr('class', 'viewfinder_box_text viewfinder_box_text_a')
             .attr('fill', 'white')
             .attr('x', `${vis.configs.boxW / 2}px`)
-            .attr('y', `${Math.round(vis.configs.boxH * 1 / 3)}px`)
+            .attr('y', `${Math.round(vis.configs.boxH / 3)}px`)
             .attr('text-anchor', 'middle')
             .attr('alignment-baseline', 'middle')
             .style('font-family', 'sans-serif')
             .style('font-size', '12px')
-            .style('font-weight', 'lighter')
-            .text('Data Placeholder 1')
+            .style('font-weight', 'lighter');
         vis.els.boxG.append('text')
             .attr('class', 'viewfinder_box_text viewfinder_box_text_b')
             .attr('fill', 'white')
@@ -113,8 +113,7 @@ export default class Viewfinder {
             .style('font-family', 'sans-serif')
             .style('font-size', '11px')
             .style('font-style', 'italic')
-            .style('font-weight', 'lighter')
-            .text('1-234-567-8910')
+            .style('font-weight', 'lighter');
 
     }
 
@@ -137,11 +136,9 @@ export default class Viewfinder {
         vis.configs.gH = vis.configs.h - (vis.configs.gMargin.top + vis.configs.gMargin.bottom);
 
         // Check coordinate position
-        if (vis.annos) {
-            const x = this.lensing.configs.pos[0] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientWidth / 2;
-            const y = this.lensing.configs.pos[1] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientHeight / 2;
-            vis.deg = Math.atan2(y, x) * (180 / Math.PI);
-        }
+        const x = this.lensing.configs.pos[0] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientWidth / 2;
+        const y = this.lensing.configs.pos[1] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientHeight / 2;
+        vis.deg = Math.atan2(y, x) * (180 / Math.PI);
 
         // Update tools
         vis.tools.xScale
@@ -152,7 +149,7 @@ export default class Viewfinder {
             .range([-vis.configs.boxH, 0]);
 
         // Render
-        vis.render()
+        vis.render();
     }
 
     /**
@@ -163,16 +160,17 @@ export default class Viewfinder {
         // Define this
         const vis = this;
 
-        // Update svg, g
-        vis.els.svg.attr('width', vis.configs.w)
-            .attr('height', vis.configs.h)
-            .attr('style', `position: absolute; left: ${-vis.configs.extend}px; top: ${-vis.configs.extend}px;`)
+        if (vis.on) {
 
-        // Update radialG
-        vis.els.radialG.style('transform', `translate(${vis.configs.gW / 2}px, ${vis.configs.gH / 2}px)`)
+            // Update svg, g
+            vis.els.svg.attr('width', vis.configs.w)
+                .attr('height', vis.configs.h)
+                .attr('style', `position: absolute; left: ${-vis.configs.extend}px; top: ${-vis.configs.extend}px;`)
 
-        // Update dataPointG
-        if (vis.annos) {
+            // Update radialG
+            vis.els.radialG.style('transform', `translate(${vis.configs.gW / 2}px, ${vis.configs.gH / 2}px)`)
+
+            // Update dataPointG
             vis.els.dataPointG
                 .datum(vis.data)
                 .each(function (d) {
@@ -187,16 +185,21 @@ export default class Viewfinder {
                     g.select('path')
                         .attr('d', vis.tools.lineMaker([[0, 0], pCoords]));
 
-                    // Update boxG pos
+                    // Update dataPointG, boxG visibility, pos
+                    vis.els.dataPointG.style('visibility', 'visible');
                     vis.els.boxG.style('transform', `translate(${pCoords[0] + addX}px, ${pCoords[1] + addY}px)`);
                 });
-        }
 
-        /* getCoords */
-        function getCoords(r, i) {
-            const x = Math.round(r * Math.sin(vis.tools.coordScale(i)));
-            const y = Math.round(r * Math.cos(vis.tools.coordScale(i)));
-            return [x, y];
+            /* getCoords */
+            function getCoords(r, i) {
+                const x = Math.round(r * Math.sin(vis.tools.coordScale(i)));
+                const y = Math.round(r * Math.cos(vis.tools.coordScale(i)));
+                return [x, y];
+            }
+        } else {
+
+            // Hide
+            vis.els.dataPointG.style('visibility', 'hidden');
         }
 
     }
@@ -214,9 +217,9 @@ export default class Viewfinder {
 
         // Update
         vis.els.boxG.select('.viewfinder_box_text_a')
-            .text(`Color Index #${d.index}`);
+            .text(`Color Index #${d.sel.index}`);
         vis.els.boxG.select('.viewfinder_box_text_b')
-            .text(`rgb(${d.r}, ${d.g}, ${d.b})`);
+            .text(`rgb(${d.sel.r}, ${d.sel.g}, ${d.sel.b})`);
     }
 
 

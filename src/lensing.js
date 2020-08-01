@@ -4,7 +4,7 @@ Lensing
 
 import Controls from './controls';
 import Lenses from './lenses';
-import Viewfinder from './viewfinder'
+import Viewfinder from './viewfinder';
 
 /*
 TODO -
@@ -43,12 +43,15 @@ export default class Lensing {
 
     // Configs
     configs = {
+        counter: 0,
+        counter_control: 2,
+        counter_exception: false,
         mag: 1,
         on: true,
         placed: false,
         pos: [],
         px: '',
-        pxData: '',
+        pxData: null,
         pxRatio: 1,
         rad: 100,
         rad_default: 100,
@@ -230,77 +233,84 @@ export default class Lensing {
      */
     draw_lens(data) {
 
-        // Place in
-        requestAnimationFrame(() => {
+        if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
 
-            // Update viewfinder
-            this.viewfinder.wrangle();
+            // Reset
+            this.configs.counter_exception = false;
 
-            // Update overlay dims and position
-            this.overlay.canvas.setAttribute('width', this.configs.rad * 2 + 'px');
-            this.overlay.canvas.setAttribute('height', this.configs.rad * 2 + 'px');
-            this.overlay.canvas.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-            this.overlay.canvas.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-            this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
-            this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
+            // Place in
+            requestAnimationFrame(() => {
 
-            // Clear s
-            this.overlay.context.clearRect(0, 0,
-                this.overlay.canvas.width, this.overlay.canvas.height);
+                // Update viewfinder
+                this.viewfinder.wrangle();
 
-            if (this.configs.on) {
+                // Update overlay dims and position
+                this.overlay.canvas.setAttribute('width', this.configs.rad * 2 + 'px');
+                this.overlay.canvas.setAttribute('height', this.configs.rad * 2 + 'px');
+                this.overlay.canvas.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+                this.overlay.canvas.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
+                this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
+                this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
 
-                // Save
-                this.overlay.context.save();
+                // Clear s
+                this.overlay.context.clearRect(0, 0,
+                    this.overlay.canvas.width, this.overlay.canvas.height);
 
-                // Filter
-                let filteredD = this.lenses.modify(data.d);
+                if (this.configs.on) {
 
-                // Convert to bitmap
-                createImageBitmap(filteredD).then(imgBitmap => {
+                    // Save
+                    this.overlay.context.save();
 
-                    // Clip
-                    if (this.configs.shape === 'circle') {
+                    // Filter
+                    let filteredD = this.lenses.modify(data.d);
+
+                    // Convert to bitmap
+                    createImageBitmap(filteredD).then(imgBitmap => {
+
+                        // Clip
+                        if (this.configs.shape === 'circle') {
+                            this.overlay.context.beginPath();
+                            this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad, 0, Math.PI * 2);
+                            this.overlay.context.clip();
+                        }
+
+                        // Draw
+                        if (this.lenses.selections.magnifier.name === 'mag_standard') {
+                            this.overlay.context.drawImage(imgBitmap,
+                                0,
+                                0,
+                                this.configs.rad * 2,
+                                this.configs.rad * 2
+                            );
+                        } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+                            this.overlay.context.scale(1 / this.configs.mag, 1 / this.configs.mag)
+                            this.overlay.context.drawImage(imgBitmap,
+                                0,
+                                0,
+                                this.configs.rad * 2 * this.configs.mag,
+                                this.configs.rad * 2 * this.configs.mag
+                            );
+                        }
+
+                        // Restore
+                        this.overlay.context.restore();
+
+                        // Lens border / stroke
+                        this.overlay.context.strokeStyle = `white`;
+                        this.overlay.context.lineWidth = 1;
                         this.overlay.context.beginPath();
-                        this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad, 0, Math.PI * 2);
-                        this.overlay.context.clip();
-                    }
+                        if (this.configs.shape === 'circle') {
+                            this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad - 1, 0, Math.PI * 2);
+                        } else if (this.configs.shape === 'square') {
+                            this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
+                        }
+                        this.overlay.context.stroke();
+                    });
 
-                    // Draw
-                    if (this.lenses.selections.magnifier.name === 'mag_standard') {
-                        this.overlay.context.drawImage(imgBitmap,
-                            0,
-                            0,
-                            this.configs.rad * 2,
-                            this.configs.rad * 2
-                        );
-                    } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
-                        this.overlay.context.scale(1 / this.configs.mag, 1 / this.configs.mag)
-                        this.overlay.context.drawImage(imgBitmap,
-                            0,
-                            0,
-                            this.configs.rad * 2 * this.configs.mag,
-                            this.configs.rad * 2 * this.configs.mag
-                        );
-                    }
-
-                    // Restore
-                    this.overlay.context.restore();
-
-                    // Lens border / stroke
-                    this.overlay.context.strokeStyle = `white`;
-                    this.overlay.context.lineWidth = 1;
-                    this.overlay.context.beginPath();
-                    if (this.configs.shape === 'circle') {
-                        this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad - 1, 0, Math.PI * 2);
-                    } else if (this.configs.shape === 'square') {
-                        this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
-                    }
-                    this.overlay.context.stroke();
-                });
-
-            }
-        });
+                }
+            });
+        }
+        this.configs.counter++;
     }
 
     /**
@@ -360,7 +370,10 @@ export default class Lensing {
                 this.lenses.change_lens('none', 'filter');
             }
             // Generics
+            this.configs.counter_exception = true;
             this.manage_slider_update();
+            this.manage_viewfinder_update();
+            this.controls.update_report();
             this.manage_lens_update();
         }
 
@@ -426,22 +439,29 @@ export default class Lensing {
             // Specifics
             if (e.key === 'm') {
                 this.lenses.change_lens('next', 'magnifier');
-                this.configs.mag = this.lenses.selections.magnifier.settings.default;
+                this.configs.mag = this.lenses.selections.magnifier.settings.active =
+                    this.lenses.selections.magnifier.settings.default;
             } else if (e.key === ',') {
                 if (this.configs.mag - this.lenses.selections.magnifier.settings.step >=
                     this.lenses.selections.magnifier.settings.min) {
                     this.configs.mag -= this.lenses.selections.magnifier.settings.step;
+                    this.lenses.selections.magnifier.settings.active = this.configs.mag;
                 }
             } else if (e.key === '.') {
                 if (this.configs.mag + this.lenses.selections.magnifier.settings.step <=
                     this.lenses.selections.magnifier.settings.max) {
                     this.configs.mag += this.lenses.selections.magnifier.settings.step;
+                    this.lenses.selections.magnifier.settings.active = this.configs.mag;
                 }
             } else if (e.key === '/') {
                 this.configs.mag = this.lenses.selections.magnifier.settings.default;
+                this.lenses.selections.magnifier.settings.active = this.configs.mag;
             }
             // Generics
+            this.configs.counter_exception = true;
             this.position_data.refPoint = this.position_data.eventPoint;
+            this.position_data.zoom = this.viewer.viewport.getZoom(true);
+            this.controls.update_report();
             this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
         }
     }
@@ -538,7 +558,7 @@ export default class Lensing {
         this.position_data.zoom = e.zoom;
         if (e.refPoint && e.refPoint.hasOwnProperty('x') && e.refPoint.hasOwnProperty('y')) {
 
-            //
+            // Config
             this.position_data.currentEvent = 'zoom';
             //this.position_data.refPoint = e.refPoint;
             this.position_data.screenCoords = [];
@@ -595,6 +615,7 @@ export default class Lensing {
                 this.viewer_aux.viewport.panTo(this.position_data.refPoint, e.immediately);
             }
         }
+        // Events
         this.manage_lens_update();
     }
 
@@ -665,11 +686,24 @@ export default class Lensing {
 
         // Get filter
         const filter = this.lenses.selections.filter;
+        filter.settings.active = filter.settings.default;
 
         // Update controls slider
         this.controls.slider.max = filter.settings.max;
         this.controls.slider.value = filter.settings.default;
         this.controls.slider.step = filter.settings.step;
+    }
+
+    /**
+     * @function manage_viewfinder_update
+     * Updates viewfinder visibility
+     *
+     * @returns null
+     */
+    manage_viewfinder_update() {
+
+        // Update viewfinder
+        this.viewfinder.on = this.lenses.selections.filter.settings.vf;
     }
 
     /**
@@ -688,8 +722,9 @@ export default class Lensing {
             1
         );
         this.configs.px = px.data[0] + '_' + px.data[1] + '_' + px.data[2]
-        let selected = null;
+        let sel = null;
         let diff = 255 * 3;
+        let range = 0;
         this.data.forEach(d => {
             // Measure difference
             // const currentDiff = Math.abs(px.data[0] + px.data[1] + px.data[2] - (+d.r + +d.g + +d.b));
@@ -702,13 +737,17 @@ export default class Lensing {
                 + 4 * g_diff ** 2
                 + (2 + (255 - r_mean) / 256) * b_diff ** 2
             );
-            // If smaller difference
-            if (cDiff < diff) {
+            // If smaller difference - TODO: linked to filter lens 'dataRgb' optimization
+            if (cDiff <= diff) {
+                range = diff;
                 diff = cDiff;
-                selected = d;
+                sel = d;
             }
-        })
-        this.configs.pxData = selected;
+        });
+        this.configs.pxData = {
+            sel: sel,
+            range: diff
+        };
     }
 
     /**

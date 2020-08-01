@@ -9,6 +9,7 @@ export default class Controls {
 
     // Vars
     slider = null;
+    on = true;
 
     /*
     CONSTRUCTOR
@@ -40,6 +41,7 @@ export default class Controls {
         container.setAttribute('style', `height: 100%; width: ${w}px; `
             + `position: absolute; right: 0; top: 0; `
             + `display: flex; flex-flow: column nowrap; align-items: center;`
+            + `visibility: ${this.on ? 'visible' : 'hidden'}`
         );
 
         // Append img
@@ -54,6 +56,16 @@ export default class Controls {
             + `position: relative; margin: ${iconPad}px;`
         );
         container.appendChild(icon);
+
+        // Build lens report
+        this.lensReport = document.createElement('div');
+        this.lensReport.setAttribute('style',
+            `position: absolute; right: ${iconW + iconPad * 3}px; top: 12px;`
+            + `color: white; font-family: sans-serif; font-size: 10px; font-style: italic; font-weight: lighter; `
+            + `white-space: nowrap;`
+        );
+        container.appendChild(this.lensReport);
+        this.update_report();
 
         // Build iconKeyboard
         const iconKeyboard = new Image();
@@ -83,7 +95,7 @@ export default class Controls {
         this.slider.setAttribute('style', `width: ${sliderWH[1]}px; height: ${2}px; `
             + `position: relative; margin-top: ${sliderWH[1] / 2 + 10}px; `
             + `-webkit-appearance: none; appearance: none; transform: rotate(90deg); outline: white; `
-            + `background-color: black;`
+            + `background-color: black; border: 1px solid rgba(255, 255, 255, 0.2);`
         );
         container.append(this.slider);
 
@@ -104,6 +116,20 @@ export default class Controls {
 
         // Update val
         this.lensing.lenses.update_filter(e.target.value)
+    }
+
+    /**
+     * @function update_report
+     * Updates lens report in controls
+     *
+     * returns void
+     */
+    update_report() {
+
+        // Update val
+        this.lensReport.innerHTML = `${this.lensing.lenses.selections.filter.vis_name} `
+            + `${this.lensing.lenses.selections.magnifier.settings.active}X `
+            + `${this.lensing.lenses.selections.magnifier.vis_name}`
     }
 
 }
