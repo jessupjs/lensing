@@ -86,6 +86,9 @@ export default class Lenses {
             }
         }
 
+        // Update viewfinder
+        this.lensing.viewfinder.wrangle();
+
         // Return modified image data
         const copyData = new Uint8ClampedArray(this.img_data.copy.data);
         const copyImageData = new ImageData(copyData, this.img_data.orig.width, this.img_data.orig.height);
@@ -226,20 +229,22 @@ export default class Lenses {
                         }
                     });
                     if (selected.name === this.lensing.configs.pxData.sel.name) {
+                        // Push to range
+                        this.lensing.configs.pxData.range.push(Math.round(diff));
+                        // Update pixel data
                         this.img_data.copy.data[i] = this.lensing.configs.pxData.sel.r;
                         this.img_data.copy.data[i + 1] = this.lensing.configs.pxData.sel.g;
                         this.img_data.copy.data[i + 2] = this.lensing.configs.pxData.sel.b;
                     } else {
-                        this.img_data.copy.data[i] = this.img_data.copy.data[i] + 255 / 2;
-                        this.img_data.copy.data[i + 1] = this.img_data.copy.data[i] + 255 / 2;
-                        this.img_data.copy.data[i + 2] = this.img_data.copy.data[i] + 255 / 2;
+                        // Update pixel data
+                        this.img_data.copy.data[i] = (this.img_data.copy.data[i] + 255) / 2;
+                        this.img_data.copy.data[i + 1] = (this.img_data.copy.data[i + 1] + 255) / 2;
+                        this.img_data.copy.data[i + 2] = (this.img_data.copy.data[i + 2] + 255) / 2;
                     }
                 }
 
                 // Magnify
                 this.selections.magnifier.update(i, index);
-                // Pass data to viewfinder
-                this.lensing.viewfinder.update_box_test(this.lensing.configs.pxData)
             },
             fill: 'rgba(255, 255, 255, 0)',
             stroke: 'rgba(0, 0, 0, 1)'
@@ -408,8 +413,8 @@ export default class Lenses {
             name: 'fil_gamma',
             vis_name: 'Gamma',
             settings: {
-                active: 2.2,
-                default: 2.2,
+                active: 0.5,
+                default: 0.5,
                 max: 5.5,
                 min: 0,
                 step: 0.1,
@@ -536,49 +541,46 @@ export default class Lenses {
             stroke: 'rgba(0, 0, 0, 1)'
         },
         // Plateau
-        /*
         {
             name: 'mag_plateau',
             vis_name: 'Plateau',
             settings: {
-                active: 1,
-                default: 1,
-                max: 10,
+                active: 1.5,
+                default: 1.5,
+                max: 5,
                 min: 1,
                 step: 0.5,
                 vf: false
             },
             update: (i, index) => {
 
+                // Config
+                const w = this.img_data.orig.width;
+                const preserve = 0.75
+
                 // Get x, y, and r
-                let x = index % this.d.width;
-                if (x < this.wh) {
-                    x += -this.d.width / 2;
-                } else {
-                    x += -this.d.width / 2 + 1;
-                }
-                let y = Math.floor(index / this.d.width);
-                if (y < this.wh) {
-                    y += -this.d.height / 2;
-                } else {
-                    y += -this.d.height / 2 + 1;
-                }
+                const x = index % w - (w / 2);
+                const y = Math.floor(index / w) - (w / 2);
                 const r = Math.sqrt(x ** 2 + y ** 2);
 
                 // Get pixels
-                const threshold = this.d.width * this.scale * 0.5;
-                if (x <= threshold && x >= -threshold &&
-                    y <= threshold && y >= -threshold) {
-                    if (r <= this.wh * 0.5 * this.preserve) {
-                        this.img_data.copy.push(this.d.data[i], this.d.data[i + 1], this.d.data[i + 2], this.d.data[i + 3]);
-                    } else {
-                        this.img_data.copy.push(0, 0, 0, 255);
-                    }
-
+                if (r <= this.lensing.configs.rad * preserve) {
+                } else if (r <= this.lensing.configs.rad) {
+                    // Discover pos of extended radius
+                    const rad = Math.atan2(x, y);
+                    // formula: rad /
+                    const add = r + this.lensing.configs.rad * (1 - preserve);
+                    const newX = Math.round(add * Math.sin(rad)) + w / 2;
+                    const newY = (Math.round(add * Math.cos(rad)) + w / 2) * w;
+                    const pos = (newX + newY) * 4;
+                    if (i < 1000) console.log(i, x, y, pos, rad, newX, newY)
+                    // Redefine
+                    this.img_data.copy.data[i] = this.img_data.copy.data[pos];
+                    this.img_data.copy.data[i + 1] = this.img_data.copy.data[pos + 1];
+                    this.img_data.copy.data[i + 2] = this.img_data.copy.data[pos + 2];
                 }
             },
         },
-        */
     ];
 
 }

@@ -241,9 +241,6 @@ export default class Lensing {
             // Place in
             requestAnimationFrame(() => {
 
-                // Update viewfinder
-                this.viewfinder.wrangle();
-
                 // Update overlay dims and position
                 this.overlay.canvas.setAttribute('width', this.configs.rad * 2 + 'px');
                 this.overlay.canvas.setAttribute('height', this.configs.rad * 2 + 'px');
@@ -287,6 +284,13 @@ export default class Lensing {
                             this.overlay.context.drawImage(imgBitmap,
                                 0,
                                 0,
+                                this.configs.rad * 2 * this.configs.mag,
+                                this.configs.rad * 2 * this.configs.mag
+                            );
+                        } else if (this.lenses.selections.magnifier.name === 'mag_plateau') {
+                            this.overlay.context.drawImage(imgBitmap,
+                                -(this.configs.mag - 1) * this.configs.rad,
+                                -(this.configs.mag - 1) * this.configs.rad,
                                 this.configs.rad * 2 * this.configs.mag,
                                 this.configs.rad * 2 * this.configs.mag
                             );
@@ -389,6 +393,7 @@ export default class Lensing {
                 }
             }
             // Generics
+            this.configs.counter_exception = true;
             this.manage_lens_update();
         }
 
@@ -400,6 +405,7 @@ export default class Lensing {
                 this.configs.on = !this.configs.on;
             }
             // Generics
+            this.configs.counter_exception = true;
             this.manage_lens_update();
         }
 
@@ -419,6 +425,7 @@ export default class Lensing {
                 this.configs.rad = this.configs.rad_default;
             }
             // Generics
+            this.configs.counter_exception = true;
             this.manage_lens_update();
         }
 
@@ -430,6 +437,7 @@ export default class Lensing {
                 this.configs.placed = !this.configs.placed;
             }
             // Generics
+            this.configs.counter_exception = true;
             this.manage_lens_update();
         }
 
@@ -652,7 +660,7 @@ export default class Lensing {
                     xy,
                     xy
                 );
-            } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+            } else {
                 let xy = Math.round(this.configs.rad * 2 * this.configs.mag);
                 d = ctx.getImageData(
                     this.configs.pos[0] - this.configs.rad * this.configs.mag,
@@ -746,7 +754,8 @@ export default class Lensing {
         });
         this.configs.pxData = {
             sel: sel,
-            range: diff
+            sel_range: diff,
+            range: []
         };
     }
 
