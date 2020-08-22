@@ -6,9 +6,12 @@ import Controls from './controls';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder';
 
+
 /*
 TODO -
   - Add in rotate
+  - Refactor mouse events to OSD.MouseTracker
+  - Update to handle async filters
 */
 
 /**
@@ -50,6 +53,7 @@ export default class Lensing {
         on: true,
         placed: false,
         pos: [],
+        pos_full: [],
         px: '',
         pxData: null,
         pxRatio: 1,
@@ -64,11 +68,11 @@ export default class Lensing {
     /*
     CONSTRUCTOR
      */
-    constructor(_osd, _viewer, _viewer_config, _data = [], _data_config = null) {
+    constructor(_osd, _viewer, _viewer_config, _data_load) {
         this.osd = _osd;
         this.viewer = _viewer;
         this.viewer_config = _viewer_config;
-        this.data = _data;
+        this.data_load = _data_load;
 
         // Set lensing configs
         this.device_config();
@@ -100,7 +104,7 @@ export default class Lensing {
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
 
-        // Instantiate Filters
+        // Instantiate Filters / ck filters from data_load
         this.lenses = new Lenses(this);
 
         // Instantiate controls
@@ -109,6 +113,26 @@ export default class Lensing {
         // Instantiate Viewfinder
         this.viewfinder = new Viewfinder(this);
 
+        // Ck filters / viewfinder setups from data_load
+        if (this.data_load.length > 0) {
+            this.analyze_data_load();
+        }
+
+    }
+
+    /**
+     * @function analyze_data_load
+     * Reviews data_load and assigns relevant variables and filters
+     *
+     * @returns void
+     */
+    analyze_data_load() {
+        this.data_load.forEach(d => {
+            // Check for filter
+            this.lenses.check_for_data_filter(d);
+            // Check for viewfinder serup
+            this.viewfinder.check_for_setup(d);
+        })
     }
 
     /**
@@ -120,16 +144,16 @@ export default class Lensing {
     attach_events() {
 
         // Click (or open)
+        this.viewer_aux.addHandler('animation', this.handle_viewer_animation.bind(this));
         this.viewer_aux.addHandler('click', this.handle_viewer_aux_click.bind(this));
         this.viewer_aux.addHandler('open', this.handle_viewer_aux_open.bind(this));
-        this.viewer_aux.addHandler('animation', this.handle_viewer_animation.bind(this));
 
         // Zoom-ing or pan-ing
         this.viewer.addHandler('animation', this.handle_viewer_animation.bind(this));
+        this.viewer.addHandler('canvas-drag', this.handle_viewer_canvasdrag.bind(this));
         this.viewer.addHandler('open', this.handle_viewer_open.bind(this));
         this.viewer.addHandler('pan', this.handle_viewer_pan.bind(this));
         this.viewer.addHandler('zoom', this.handle_viewer_zoom.bind(this));
-        this.viewer.addHandler('canvas-drag', this.handle_viewer_canvasdrag.bind(this));
 
         // Mouse-ing
         this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
@@ -671,7 +695,7 @@ export default class Lensing {
             }
 
             // If data config to color
-            if (this.data.length > 0) {
+            if (this.lenses.selections.filter.name.substring(0, 8) === 'fil_data') {
                 this.set_pixel(ctx);
             }
 
@@ -712,6 +736,18 @@ export default class Lensing {
 
         // Update viewfinder
         this.viewfinder.on = this.lenses.selections.filter.settings.vf;
+        if (this.viewfinder.on) {
+            // If has setup, destroy
+            if (this.viewfinder.setup) {
+                this.viewfinder.refresh();
+            }
+            // Set new setup and init
+            this.viewfinder.setup =
+                this.viewfinder.setups.find(s => s.name === this.lenses.selections.filter.settings.vf_setup);
+            if (this.viewfinder.setup) {
+                this.viewfinder.setup.init();
+            }
+        }
     }
 
     /**
@@ -729,34 +765,10 @@ export default class Lensing {
             1,
             1
         );
-        this.configs.px = px.data[0] + '_' + px.data[1] + '_' + px.data[2]
-        let sel = null;
-        let diff = 255 * 3;
-        let range = 0;
-        this.data.forEach(d => {
-            // Measure difference
-            // const currentDiff = Math.abs(px.data[0] + px.data[1] + px.data[2] - (+d.r + +d.g + +d.b));
-            const r_mean = (px.data[0] + +d.r) / 2;
-            const r_diff = px.data[0] - +d.r;
-            const g_diff = px.data[1] - +d.g;
-            const b_diff = px.data[2] - +d.b;
-            const cDiff = Math.sqrt(
-                (2 + r_mean / 256) * r_diff ** 2
-                + 4 * g_diff ** 2
-                + (2 + (255 - r_mean) / 256) * b_diff ** 2
-            );
-            // If smaller difference - TODO: linked to filter lens 'dataRgb' optimization
-            if (cDiff <= diff) {
-                range = diff;
-                diff = cDiff;
-                sel = d;
-            }
-        });
-        this.configs.pxData = {
-            sel: sel,
-            sel_range: diff,
-            range: []
-        };
+        this.configs.pxCol = px.data[0] + '_' + px.data[1] + '_' + px.data[2];
+
+        // Perform setup
+        this.lenses.selections.filter.set_pixel(px)
     }
 
     /**
@@ -771,19 +783,24 @@ export default class Lensing {
     set_position(coords, isPoint = false) {
 
         // Get some cords for overlay
-        const x = Math.round(coords[0] * this.configs.pxRatio);
-        const y = Math.round(coords[1] * this.configs.pxRatio);
+        let x = Math.round(coords[0] * this.configs.pxRatio);
+        let y = Math.round(coords[1] * this.configs.pxRatio);
         this.configs.pos = [x, y];
         if (isPoint) {
             const reCoords = this.viewer.viewport.pixelFromPoint(coords);
-            const x = Math.round(reCoords.x * this.configs.pxRatio);
-            const y = Math.round(reCoords.y * this.configs.pxRatio);
-            this.configs.pos = [x, y];
+            this.configs.pos = [
+                Math.round(reCoords.x * this.configs.pxRatio),
+                Math.round(reCoords.y * this.configs.pxRatio)
+            ];
         }
 
         // Transform coordinates to scroll point
         const point = new this.osd.Point(coords[0], coords[1]);
         this.position_data.eventPoint = isPoint ? coords : this.viewer.viewport.viewerElementToViewportCoordinates(point);
+        const pos_full = this.viewer.world.getItemAt(0) ?
+            this.viewer.world.getItemAt(0).viewportToImageCoordinates(this.position_data.eventPoint)
+            : {x: 0, y: 0};
+        this.configs.pos_full = [pos_full.x, pos_full.y];
 
         // Check for event point before calulating reference point
         this.position_data.centerPoint = this.viewer.viewport.getCenter(true);

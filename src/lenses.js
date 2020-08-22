@@ -48,8 +48,12 @@ export default class Lenses {
         this.selections.magnifier = this.magnifiers[0];
     }
 
-    /*
-    modify
+    /**
+     * @function modify
+     *
+     * @param {ImageData} imgD
+     *
+     * @returns ImageData
      */
     modify(imgD) {
 
@@ -91,13 +95,17 @@ export default class Lenses {
 
         // Return modified image data
         const copyData = new Uint8ClampedArray(this.img_data.copy.data);
-        const copyImageData = new ImageData(copyData, this.img_data.orig.width, this.img_data.orig.height);
         // KEEP4REF // console.log(copyImageData, Math.sqrt(copyImageData.data.length / 4));
-        return copyImageData;
+        return new ImageData(copyData, this.img_data.orig.width, this.img_data.orig.height);
     }
 
-    /*
-    change_lens
+    /**
+     * @function change_lens
+     *
+     * @param {string} direction
+     * @param {string} lensType
+     *
+     * @returns void
      */
     change_lens(direction, lensType) {
         let lensSet = [];
@@ -131,8 +139,43 @@ export default class Lenses {
         }
     }
 
-    /*
-    update_filter
+    /**
+     * @function check_for_data_filter
+     *
+     * @param {Object} ref
+     *
+     * @returns void
+     */
+    check_for_data_filter(ref) {
+
+        // Define this
+        const vis = this;
+
+        // Filter
+        const data_filter = this.data_filters.find(d => d.name === ref.config.filter);
+        if (data_filter) {
+            installFilter(data_filter)
+        } else if (ref.config.filter === 'fil_data_custom') {
+            installFilter(ref.config.filterCode);
+        }
+
+        // Abstract installation
+        function installFilter(fil) {
+            // Add to filters
+            const first = vis.filters.shift();
+            vis.filters.unshift(fil);
+            vis.filters.unshift(first);
+            // Update w data
+            fil.data = ref.data;
+        }
+    }
+
+    /**
+     * @function update_filter
+     *
+     * @param {number} val
+     *
+     * @returns void
      */
     update_filter(val) {
 
@@ -158,91 +201,6 @@ export default class Lenses {
                 iter: 'px'
             },
             update: (i, index) => {
-                // Magnify
-                this.selections.magnifier.update(i, index);
-            },
-            fill: 'rgba(255, 255, 255, 0)',
-            stroke: 'rgba(0, 0, 0, 1)'
-        },
-        // data_rgb
-        {
-            name: 'fil_data_rgb',
-            vis_name: 'Data RGB',
-            settings: {
-                active: 1,
-                default: 1,
-                max: 1,
-                min: 0,
-                step: 1,
-                vf: true,
-                iter: 'px'
-            },
-            update: (i, index) => {
-
-                // TODO - thinking of optimizing - trial work in 'test' - no big breakthrough :^(
-                const test = false;
-
-                if (test) {
-
-                    const sel = this.lensing.configs.pxData.sel;
-                    // Compare
-                    const r_mean = (this.img_data.copy.data[i] + +sel.r) / 2;
-                    const r_diff = this.img_data.copy.data[i] - +sel.r;
-                    const g_diff = this.img_data.copy.data[i + 1] - +sel.g;
-                    const b_diff = this.img_data.copy.data[i + 2] - +sel.b;
-                    const cDiff = Math.sqrt(
-                        (2 + r_mean / 256) * r_diff ** 2
-                        + 4 * g_diff ** 2
-                        + (2 + (255 - r_mean) / 256) * b_diff ** 2
-                    );
-                    // Eval
-                    if (cDiff <= this.lensing.configs.pxData.range) {
-                        this.img_data.copy.data[i] = this.lensing.configs.pxData.sel.r;
-                        this.img_data.copy.data[i + 1] = this.lensing.configs.pxData.sel.g;
-                        this.img_data.copy.data[i + 2] = this.lensing.configs.pxData.sel.b;
-                    } else {
-                        this.img_data.copy.data[i] = this.img_data.copy.data[i] + 255 / 2;
-                        this.img_data.copy.data[i + 1] = this.img_data.copy.data[i] + 255 / 2;
-                        this.img_data.copy.data[i + 2] = this.img_data.copy.data[i] + 255 / 2;
-                    }
-
-                } else {
-
-                    // See if matches selected
-                    let selected = null;
-                    let diff = 255 * 3;
-                    // Iterate
-                    this.lensing.data.forEach((d, j) => {
-                        const r_mean = (this.img_data.copy.data[i] + +d.r) / 2;
-                        const r_diff = this.img_data.copy.data[i] - +d.r;
-                        const g_diff = this.img_data.copy.data[i + 1] - +d.g;
-                        const b_diff = this.img_data.copy.data[i + 2] - +d.b;
-                        const cDiff = Math.sqrt(
-                            (2 + r_mean / 256) * r_diff ** 2
-                            + 4 * g_diff ** 2
-                            + (2 + (255 - r_mean) / 256) * b_diff ** 2
-                        );
-                        // If smaller difference
-                        if (cDiff < diff) {
-                            diff = cDiff;
-                            selected = d;
-                        }
-                    });
-                    if (selected.name === this.lensing.configs.pxData.sel.name) {
-                        // Push to range
-                        this.lensing.configs.pxData.range.push(Math.round(diff));
-                        // Update pixel data
-                        this.img_data.copy.data[i] = this.lensing.configs.pxData.sel.r;
-                        this.img_data.copy.data[i + 1] = this.lensing.configs.pxData.sel.g;
-                        this.img_data.copy.data[i + 2] = this.lensing.configs.pxData.sel.b;
-                    } else {
-                        // Update pixel data
-                        this.img_data.copy.data[i] = (this.img_data.copy.data[i] + 255) / 2;
-                        this.img_data.copy.data[i + 1] = (this.img_data.copy.data[i + 1] + 255) / 2;
-                        this.img_data.copy.data[i + 2] = (this.img_data.copy.data[i + 2] + 255) / 2;
-                    }
-                }
-
                 // Magnify
                 this.selections.magnifier.update(i, index);
             },
@@ -443,6 +401,99 @@ export default class Lenses {
     ];
 
     /*
+    data_filters
+     */
+    data_filters = [
+        // fil_data_rgb
+        {
+            data: [],
+            name: 'fil_data_rgb',
+            vis_name: 'Data RGB',
+            settings: {
+                active: 1,
+                default: 1,
+                max: 1,
+                min: 0,
+                step: 1,
+                vf: true,
+                vf_setup: 'vis_data_rgb',
+                iter: 'px'
+            },
+            set_pixel: (px) => {
+
+                // Get pixel data for vis
+                let sel = null;
+                let diff = 255 * 3;
+                let range = 0;
+                this.selections.filter.data.forEach(d => {
+                    // Measure difference
+                    const r_mean = (px.data[0] + +d.r) / 2;
+                    const r_diff = px.data[0] - +d.r;
+                    const g_diff = px.data[1] - +d.g;
+                    const b_diff = px.data[2] - +d.b;
+                    const cDiff = Math.sqrt(
+                        (2 + r_mean / 256) * r_diff ** 2
+                        + 4 * g_diff ** 2
+                        + (2 + (255 - r_mean) / 256) * b_diff ** 2
+                    );
+                    // If smaller difference - TODO: linked to filter lens 'dataRgb' optimization
+                    if (cDiff <= diff) {
+                        range = diff;
+                        diff = cDiff;
+                        sel = d;
+                    }
+                });
+                this.lensing.configs.pxData = {
+                    sel: sel,
+                    sel_range: diff,
+                    range: []
+                };
+            },
+            update: (i, index) => {
+
+                // See if matches selected
+                let selected = null;
+                let diff = 255 * 3;
+                // Iterate
+                this.selections.filter.data.forEach((d, j) => {
+                    const r_mean = (this.img_data.copy.data[i] + +d.r) / 2;
+                    const r_diff = this.img_data.copy.data[i] - +d.r;
+                    const g_diff = this.img_data.copy.data[i + 1] - +d.g;
+                    const b_diff = this.img_data.copy.data[i + 2] - +d.b;
+                    const cDiff = Math.sqrt(
+                        (2 + r_mean / 256) * r_diff ** 2
+                        + 4 * g_diff ** 2
+                        + (2 + (255 - r_mean) / 256) * b_diff ** 2
+                    );
+                    // If smaller difference
+                    if (cDiff < diff) {
+                        diff = cDiff;
+                        selected = d;
+                    }
+                });
+                if (selected.name === this.lensing.configs.pxData.sel.name) {
+                    // Push to range
+                    this.lensing.configs.pxData.range.push(Math.round(diff));
+                    // Update pixel data
+                    this.img_data.copy.data[i] = this.lensing.configs.pxData.sel.r;
+                    this.img_data.copy.data[i + 1] = this.lensing.configs.pxData.sel.g;
+                    this.img_data.copy.data[i + 2] = this.lensing.configs.pxData.sel.b;
+                } else {
+                    // Update pixel data
+                    this.img_data.copy.data[i] = (this.img_data.copy.data[i] + 255) / 2;
+                    this.img_data.copy.data[i + 1] = (this.img_data.copy.data[i + 1] + 255) / 2;
+                    this.img_data.copy.data[i + 2] = (this.img_data.copy.data[i + 2] + 255) / 2;
+                }
+
+                // Magnify
+                this.selections.magnifier.update(i, index);
+            },
+            fill: 'rgba(255, 255, 255, 0)',
+            stroke: 'rgba(0, 0, 0, 1)'
+        },
+    ];
+
+    /*
     magnifiers
      */
     magnifiers = [
@@ -573,7 +624,7 @@ export default class Lenses {
                     const newX = Math.round(add * Math.sin(rad)) + w / 2;
                     const newY = (Math.round(add * Math.cos(rad)) + w / 2) * w;
                     const pos = (newX + newY) * 4;
-                    if (i < 1000) console.log(i, x, y, pos, rad, newX, newY)
+                    // if (i < 1000) console.log(i, x, y, pos, rad, newX, newY)
                     // Redefine
                     this.img_data.copy.data[i] = this.img_data.copy.data[pos];
                     this.img_data.copy.data[i + 1] = this.img_data.copy.data[pos + 1];

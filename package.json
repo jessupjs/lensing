@@ -1,6 +1,6 @@
 {
   "name": "lensing",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "Lens tooling plugin for OpenSeadragon ",
   "main": "./dist/main.js",
   "scripts": {
