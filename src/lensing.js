@@ -6,10 +6,10 @@ import Controls from './controls';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder';
 
-
 /*
 TODO -
   - Add in rotate
+  - Make aux_viewer size of lens - tried ... bad performance
   - Refactor mouse events to OSD.MouseTracker
   - Update to handle async filters
 */
@@ -17,7 +17,6 @@ TODO -
 /**
  * @class Lensing
  *
- * @constructor
  */
 export default class Lensing {
 
@@ -28,10 +27,10 @@ export default class Lensing {
 
     // Components
     overlay = null;
+    viewer_canvas = null;
     viewer_aux = null;
     viewer_aux_canvas = null;
     viewer = null;
-    viewer_canvas = null;
 
     // Position data
     position_data = {
@@ -65,8 +64,8 @@ export default class Lensing {
         shape: 'circle',
     }
 
-    /*
-    CONSTRUCTOR
+    /**
+     * @constructor
      */
     constructor(_osd, _viewer, _viewer_config, _data_load) {
         this.osd = _osd;
@@ -74,7 +73,7 @@ export default class Lensing {
         this.viewer_config = _viewer_config;
         this.data_load = _data_load;
 
-        // Set lensing configs
+        // Set lensing configs using device settings
         this.device_config();
 
         // Init
@@ -84,7 +83,7 @@ export default class Lensing {
     /**
      * 1.
      * @function init
-     * Initializes the viewers, overlay and lenses
+     * Initializes the viewers, overlay, lenses and viewfinders
      *
      * @returns void
      */
@@ -93,14 +92,14 @@ export default class Lensing {
         // Build magnifier viewer (hidden viewer)
         this.viewer_aux = this.build_hidden_viewer();
 
-        // Get actual canvas els
+        // Keep viewer canvas and aux canvas as a variable
         this.viewer_canvas = this.viewer.canvas.querySelector('canvas');
         this.viewer_aux_canvas = this.viewer_aux.canvas.querySelector('canvas');
 
         // Add event listeners to viewer
         this.attach_events();
 
-        // Build overlay
+        // Build lens overlay
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
 
@@ -181,12 +180,13 @@ export default class Lensing {
 
         // Position
         const containers = viewerEl.querySelectorAll(`.openseadragon-container`);
-        containers[0].classList.add('o-c_main');
+        containers[0].classList.add('lensing-c_main');
         containers[0].style.position = 'relative';
-        containers[1].classList.add('o-c_aux')
+        containers[1].classList.add('lensing-c_aux')
         containers[1].style.position = 'absolute';
         containers[1].style.visibility = 'hidden';
 
+        // Return osd viewer
         return viewer_aux;
     }
 
@@ -239,12 +239,13 @@ export default class Lensing {
         // Pixel ratio
         const pxRatio = window.devicePixelRatio;
 
-        // Configs
+        // Configs pxRatio
         this.configs.pxRatio = pxRatio;
         this.configs.rad = Math.round(50 * pxRatio);
         this.configs.rad_default = Math.round(50 * pxRatio);
         this.configs.rad_inc = Math.round(5 * pxRatio);
         this.configs.rad_max = Math.round(200 * pxRatio);
+
     }
 
     /**
@@ -257,6 +258,7 @@ export default class Lensing {
      */
     draw_lens(data) {
 
+        // if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
         if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
 
             // Reset
@@ -273,7 +275,7 @@ export default class Lensing {
                 this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
                 this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
 
-                // Clear s
+                // Clear
                 this.overlay.context.clearRect(0, 0,
                     this.overlay.canvas.width, this.overlay.canvas.height);
 
@@ -633,9 +635,12 @@ export default class Lensing {
                 && this.position_data.refPoint.hasOwnProperty('x')
                 && this.position_data.refPoint.hasOwnProperty('y')) {
 
+                // Diff variable
+                const diff = this.viewer_aux_canvas.width / this.viewer_canvas.width;
+
                 // Zoom
                 this.viewer_aux.viewport.zoomTo(
-                    this.position_data.zoom * this.configs.mag,
+                    this.position_data.zoom * this.configs.mag / diff,
                     this.position_data.refPoint,
                     e.immediately
                 );
@@ -647,6 +652,7 @@ export default class Lensing {
                 this.viewer_aux.viewport.panTo(this.position_data.refPoint, e.immediately);
             }
         }
+
         // Events
         this.manage_lens_update();
     }
@@ -730,7 +736,7 @@ export default class Lensing {
      * @function manage_viewfinder_update
      * Updates viewfinder visibility
      *
-     * @returns null
+     * @returns void
      */
     manage_viewfinder_update() {
 
@@ -773,7 +779,7 @@ export default class Lensing {
 
     /**
      * @function set_position
-     * Converts mouse coords to viewport point for hidden layer if mag on, sets coordinate config for overlay
+     * Converts mouse coords to viewport point for hidden layer if mag on; sets coordinate config for overlay
      *
      * @param {array} coords
      * @param {boolean} isPoint
@@ -797,12 +803,12 @@ export default class Lensing {
         // Transform coordinates to scroll point
         const point = new this.osd.Point(coords[0], coords[1]);
         this.position_data.eventPoint = isPoint ? coords : this.viewer.viewport.viewerElementToViewportCoordinates(point);
-        const pos_full = this.viewer.world.getItemAt(0) ?
-            this.viewer.world.getItemAt(0).viewportToImageCoordinates(this.position_data.eventPoint)
+        const pos_full = this.viewer.world.getItemAt(0)
+            ? this.viewer.world.getItemAt(0).viewportToImageCoordinates(this.position_data.eventPoint)
             : {x: 0, y: 0};
         this.configs.pos_full = [pos_full.x, pos_full.y];
 
-        // Check for event point before calulating reference point
+        // Check for event point before calculating reference point
         this.position_data.centerPoint = this.viewer.viewport.getCenter(true);
         const gap = this.position_data.centerPoint.minus(this.position_data.eventPoint).divide(this.configs.mag);
         this.position_data.refPoint = this.position_data.eventPoint.plus(gap);

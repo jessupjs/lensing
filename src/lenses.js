@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 /*
 LFilters
  + Some filters from National Institute of Standards and Technology (indicated below)
@@ -11,6 +13,10 @@ LFilters
  + Sobel edge
    - https://stackoverflow.com/questions/17815687/image-processing-implementing-sobel-filter
    - https://github.com/miguelmota/sobel
+ */
+
+/* TODO
+    - need to optimize for any image greater than the lens dims
  */
 
 export default class Lenses {
@@ -36,6 +42,11 @@ export default class Lenses {
         copy: null,
         copy_indexed: []
     };
+
+    // Tools
+    tools = {
+        plateauScale: d3.scaleSqrt()
+    }
 
     /*
     CONSTRUCTOR
@@ -67,14 +78,8 @@ export default class Lenses {
         // Iterate and update
         if (this.selections.filter.settings.iter === 'px') {
             let index = 0;
+            this.img_data.copy.data = this.img_data.orig.data;
             for (let i = 0; i < this.img_data.orig.data.length; i += 4) {
-                // Copy
-                this.img_data.copy.data.push(
-                    this.img_data.orig.data[i],
-                    this.img_data.orig.data[i + 1],
-                    this.img_data.orig.data[i + 2],
-                    this.img_data.orig.data[i + 3]
-                );
                 // Update filter
                 this.selections.filter.update(i, index);
                 // Increment index
@@ -605,9 +610,12 @@ export default class Lenses {
             },
             update: (i, index) => {
 
+                // Define this
+                const vis = this;
+
                 // Config
                 const w = this.img_data.orig.width;
-                const preserve = 0.75
+                const preserve = 0.67;
 
                 // Get x, y, and r
                 const x = index % w - (w / 2);
@@ -615,20 +623,52 @@ export default class Lenses {
                 const r = Math.sqrt(x ** 2 + y ** 2);
 
                 // Get pixels
-                if (r <= this.lensing.configs.rad * preserve) {
+                if (r < this.lensing.configs.rad * preserve) {
+                    this.img_data.copy_indexed.push(
+                        this.img_data.copy.data[i],
+                        this.img_data.copy.data[i + 1],
+                        this.img_data.copy.data[i + 2],
+                        this.img_data.copy.data[i + 3]
+                    );
                 } else if (r <= this.lensing.configs.rad) {
                     // Discover pos of extended radius
                     const rad = Math.atan2(x, y);
-                    // formula: rad /
-                    const add = r + this.lensing.configs.rad * (1 - preserve);
-                    const newX = Math.round(add * Math.sin(rad)) + w / 2;
-                    const newY = (Math.round(add * Math.cos(rad)) + w / 2) * w;
-                    const pos = (newX + newY) * 4;
-                    // if (i < 1000) console.log(i, x, y, pos, rad, newX, newY)
+                    // Calc new pos
+                    vis.tools.plateauScale
+                        .domain([vis.lensing.configs.rad * preserve, vis.lensing.configs.rad])
+                        .range([vis.lensing.configs.rad * preserve, w / 2]);
+                    const add = vis.tools.plateauScale(r);
+                    const newX = Math.round(add * Math.sin(rad));
+                    const newY = Math.round(add * Math.cos(rad));
+                    const col = (newX + w / 2) * 4;
+                    const row = (newY + w / 2) * w * 4;
+                    const pos = col + row;
+
                     // Redefine
-                    this.img_data.copy.data[i] = this.img_data.copy.data[pos];
-                    this.img_data.copy.data[i + 1] = this.img_data.copy.data[pos + 1];
-                    this.img_data.copy.data[i + 2] = this.img_data.copy.data[pos + 2];
+                    this.img_data.copy_indexed.push(
+                        this.img_data.copy.data[pos],
+                        this.img_data.copy.data[pos + 1],
+                        this.img_data.copy.data[pos + 2],
+                        this.img_data.copy.data[pos + 3]
+                    );
+                } else {
+                    this.img_data.copy_indexed.push(
+                        0,
+                        0,
+                        0,
+                        255
+                    );
+                }
+
+                // If last one
+                if (i >= w * w * 4 - 4) {
+                    this.img_data.copy.data = this.img_data.copy_indexed;
+                }
+
+                function scale(input) {
+                    const d = [vis.lensing.configs.rad * preserve, vis.lensing.configs.rad];
+                    const r = [vis.lensing.configs.rad * preserve, w / 2];
+                    return -((d[1] - input) * (r[1] - r[0]) / (d[1] - d[0]) - r[1]);
                 }
             },
         },
