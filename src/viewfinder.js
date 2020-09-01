@@ -111,7 +111,9 @@ export default class Viewfinder {
                 .range([-vis.configs.boxH, 0]);
 
             // Setup specific
-            vis.setup.wrangle();
+            if (!vis.lensing.lenses.selections.filter.settings.async) {
+                vis.setup.wrangle();
+            }
         }
 
         // Render
@@ -164,7 +166,9 @@ export default class Viewfinder {
             }
 
             // Setup specific
-            vis.setup.render();
+            if (!vis.lensing.lenses.selections.filter.settings.async) {
+                vis.setup.render();
+            }
 
         } else {
 
@@ -378,6 +382,8 @@ export default class Viewfinder {
                 // Config - purpose:range
                 vis.tools.nestScX.domain([0, +vis.nest_range[vis.nest_range.length - 1].key]);
                 vis.tools.nestScY.domain([0, d3.max(vis.nest_range, d => +d.value)]);
+
+
             },
             render: () => {
                 // Define this

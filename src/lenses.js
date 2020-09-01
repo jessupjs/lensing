@@ -198,7 +198,9 @@ export default class Lenses {
             vis_name: 'No Filter',
             settings: {
                 active: 1,
+                async: false,
                 default: 1,
+                loading: false,
                 max: 1,
                 min: 0,
                 step: 1,
@@ -218,7 +220,9 @@ export default class Lenses {
             vis_name: 'Sobel Edge',
             settings: {
                 active: 127,
+                async: false,
                 default: 127,
+                loading: false,
                 max: 255,
                 min: 0,
                 step: 1,
@@ -293,7 +297,9 @@ export default class Lenses {
             vis_name: 'Grayscale',
             settings: {
                 active: 127,
+                async: false,
                 default: 127,
+                loading: false,
                 max: 255,
                 min: 0,
                 step: 1,
@@ -321,7 +327,9 @@ export default class Lenses {
             vis_name: 'Invert',
             settings: {
                 active: 255,
+                async: false,
                 default: 255,
+                loading: false,
                 max: 255,
                 min: 0,
                 step: 1,
@@ -351,7 +359,9 @@ export default class Lenses {
             vis_name: 'Threshold',
             settings: {
                 active: 127,
+                async: false,
                 default: 127,
+                loading: false,
                 max: 255,
                 min: 0,
                 step: 1,
@@ -377,7 +387,9 @@ export default class Lenses {
             vis_name: 'Gamma',
             settings: {
                 active: 0.5,
+                async: false,
                 default: 0.5,
+                loading: false,
                 max: 5.5,
                 min: 0,
                 step: 0.1,
@@ -416,7 +428,9 @@ export default class Lenses {
             vis_name: 'Data RGB',
             settings: {
                 active: 1,
+                async: false,
                 default: 1,
+                loading: false,
                 max: 1,
                 min: 0,
                 step: 1,
@@ -665,11 +679,13 @@ export default class Lenses {
                     this.img_data.copy.data = this.img_data.copy_indexed;
                 }
 
+                /*
                 function scale(input) {
                     const d = [vis.lensing.configs.rad * preserve, vis.lensing.configs.rad];
                     const r = [vis.lensing.configs.rad * preserve, w / 2];
                     return -((d[1] - input) * (r[1] - r[0]) / (d[1] - d[0]) - r[1]);
                 }
+                */
             },
         },
     ];
