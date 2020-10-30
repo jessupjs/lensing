@@ -70,9 +70,7 @@ export default class Viewfinder {
             .attr('class', 'viewfinder_box_blackboard')
             .attr('width', vis.configs.boxW)
             .attr('height', vis.configs.boxH)
-            .attr('fill', 'rgba(0, 0, 0, 0.5)')
-            .attr('stroke', 'rgba(255, 255, 255, 1)')
-            .attr('stroke-width', '0.5px');
+            .attr('fill', 'rgba(0, 0, 0, 0.75)');
 
     }
 
@@ -215,6 +213,7 @@ export default class Viewfinder {
      */
     restyle() {
         // TODO - expand to include all styling operations
+        this.els.blackboardRect.attr('width', this.configs.boxW);
         this.els.blackboardRect.attr('height', this.configs.boxH);
     }
 
@@ -229,14 +228,14 @@ export default class Viewfinder {
             boxW: 150,
             boxH: 90,
             deg: 0,
-            extend: 200,
+            extend: 400,
             gMargin: {top: 0, left: 0, right: 0, bottom: 0},
             gH: 0,
             gW: 0,
             h: 0,
             r: 0,
             rPointer: 0,
-            rPointerExt: 25,
+            rPointerExt: 50,
             w: 0,
         };
 
@@ -253,6 +252,7 @@ export default class Viewfinder {
 
     /*
     setups
+    - Really just an example of D3 plugin chart
      */
     setups = [
         {
@@ -371,10 +371,8 @@ export default class Viewfinder {
                 const vis = this;
 
                 // Nest - purpose:range
-                vis.nest_range = d3.nest()
-                    .key(d => d)
-                    .rollup(v => v.length)
-                    .entries(vis.data.range);
+                vis.nest_range =
+                    Array.from(d3.group(vis.data.range, d => d), ([key, value]) => ({key, value: value.length}));
                 vis.nest_range.sort((a, b) => {
                     return +a.key - +b.key;
                 });
