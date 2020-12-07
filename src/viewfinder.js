@@ -13,6 +13,9 @@ export default class Viewfinder {
     setup = null;
     on = false;
 
+    // Configs
+    configs = {};
+
     // Elements
     els = {
         svg: null,
@@ -48,7 +51,9 @@ export default class Viewfinder {
 
         // Build svg, g
         vis.els.svg = d3.select(vis.lensing.overlay.container)
-            .append('svg');
+            .append('svg')
+            .attr('class', 'viewerfinder_svg')
+            .style('position', 'absolute');
         vis.els.g = vis.els.svg.append('g')
             .attr('class', 'viewfinder_g')
             .style('transform', `translate(${vis.configs.gMargin.top}px, ${vis.configs.gMargin.left}px)`);
@@ -98,7 +103,7 @@ export default class Viewfinder {
             // Check coordinate position - purpose:placement
             const x = this.lensing.configs.pos[0] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientWidth / 2;
             const y = this.lensing.configs.pos[1] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientHeight / 2;
-            vis.deg = Math.atan2(y, x) * (180 / Math.PI);
+            vis.configs.deg = Math.atan2(y, x) * (180 / Math.PI);
 
             // Update tools - purpose:placement
             vis.tools.xScale
@@ -143,7 +148,7 @@ export default class Viewfinder {
                     const g = d3.select(this);
 
                     // Pointer coords
-                    const pCoords = getCoords(vis.configs.rPointer, vis.deg - 90);
+                    const pCoords = getCoords(vis.configs.rPointer, vis.configs.deg - 90);
                     const addX = Math.round(vis.tools.xScale(pCoords[0]));
                     const addY = Math.round(vis.tools.yScale(pCoords[1]));
 

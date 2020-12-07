@@ -408,6 +408,7 @@ export default class Lenses {
                 this.img_data.copy.data[i] = gamma(this.img_data.copy.data[i]);
                 this.img_data.copy.data[i + 1] = gamma(this.img_data.copy.data[i + 1]);
                 this.img_data.copy.data[i + 2] = gamma(this.img_data.copy.data[i + 2]);
+
                 // Magnify
                 this.selections.magnifier.update(i, index);
             },

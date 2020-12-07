@@ -2,6 +2,7 @@
 Lensing
  */
 
+import Compass from './compass';
 import Controls from './controls';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder';
@@ -21,16 +22,17 @@ TODO -
 export default class Lensing {
 
     // Class refs
+    compass = null;
     controls = null;
     lenses = null;
     viewfinder = null;
 
     // Components
     overlay = null;
+    viewer = null;
     viewer_canvas = null;
     viewer_aux = null;
     viewer_aux_canvas = null;
-    viewer = null;
 
     // Position data
     position_data = {
@@ -45,9 +47,12 @@ export default class Lensing {
 
     // Configs
     configs = {
+        compassOn: false,
+        compassUnitConversion: null,
         counter: 0,
         counter_control: 2,
         counter_exception: false,
+        imageMetadata: null,
         mag: 1,
         on: true,
         placed: false,
@@ -67,13 +72,15 @@ export default class Lensing {
     /**
      * @constructor
      */
-    constructor(_osd, _viewer, _viewer_config, _data_load) {
+    constructor(_osd, _viewer, _viewer_config, _lensing_config, _data_load) {
         this.osd = _osd;
         this.viewer = _viewer;
         this.viewer_config = _viewer_config;
+        this.lensing_config = _lensing_config;
         this.data_load = _data_load;
 
         // Set lensing configs using device settings
+        this.config_update(this.lensing_config)
         this.device_config();
 
         // Init
@@ -103,14 +110,17 @@ export default class Lensing {
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
 
-        // Instantiate Filters / ck filters from data_load
+        // Instantiate filters / ck filters from data_load
         this.lenses = new Lenses(this);
 
         // Instantiate controls
         this.controls = new Controls(this);
 
-        // Instantiate Viewfinder
+        // Instantiate viewfinder
         this.viewfinder = new Viewfinder(this);
+
+        // Instantiate compass
+        this.compass = new Compass(this);
 
         // Ck filters / viewfinder setups from data_load
         if (this.data_load.length > 0) {
@@ -205,15 +215,17 @@ export default class Lensing {
         const container = document.createElement('div');
         container.setAttribute('class', `overlay_container_${id} overlay_container`);
         container.setAttribute('style',
-            `height: ${dims[0]}px; pointer-events: none; position: absolute; width: ${dims[1]}px;`);
+            `pointer-events: none; position: absolute;`);
+        // container.setAttribute('style',
+        //     `height: ${dims[0]}px; pointer-events: none; position: absolute; width: ${dims[1]}px;`);
 
         // Append container
         this.viewer.canvas.append(container);
 
         // Build actualCanvas
         const actualCanvas = document.createElement('canvas');
-        actualCanvas.setAttribute('width', `${dims[0] * this.configs.pxRatio}`);
-        actualCanvas.setAttribute('height', `${dims[1] * this.configs.pxRatio}`);
+        // actualCanvas.setAttribute('width', `${dims[0] * this.configs.pxRatio}`);
+        // actualCanvas.setAttribute('height', `${dims[1] * this.configs.pxRatio}`);
         actualCanvas.setAttribute('style',
             'height: 100%; pointer-events: none; position: absolute; width: 100%;');
 
@@ -226,6 +238,20 @@ export default class Lensing {
             container: container,
             context: actualCanvas.getContext('2d')
         };
+    }
+
+    /**
+     * @function config_update
+     * Updates configuration settings
+     *
+     * @param {any} config
+     *
+     * @returns void
+     */
+    config_update(config) {
+        for (const [k, v] of Object.entries(config)) {
+            if (this.configs.hasOwnProperty(k)) this.configs[k] = v;
+        }
     }
 
     /**
@@ -700,9 +726,14 @@ export default class Lensing {
                 );
             }
 
-            // If data config to color
+            // If data filter is on
             if (this.lenses.selections.filter.name.substring(0, 8) === 'fil_data') {
                 this.set_pixel(ctx);
+            }
+
+            // If compass is on
+            if (this.configs.compassOn) {
+                this.compass.wrangle();
             }
 
             // Draw

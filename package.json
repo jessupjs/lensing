@@ -20,7 +20,7 @@
   "homepage": "https://github.com/jessupjs/lensing#readme",
   "keywords": [],
   "dependencies": {
-    "d3": "^6.2.0"
+    "d3": "^6.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
