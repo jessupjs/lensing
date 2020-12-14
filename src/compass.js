@@ -41,10 +41,11 @@ export default class Compass {
 
     // Tools
     tools = {
-        // axisX: d3.axisTop(),
-        // axisY: d3.axisLeft(),
+        axisX: d3.axisTop(),
+        axisY: d3.axisLeft(),
         scUnits: d3.scaleLinear(),
-        scDims: d3.scaleLinear()
+        scDims: d3.scaleLinear(),
+        scAxis: d3.scaleLinear()
     };
 
     /*
@@ -85,11 +86,11 @@ export default class Compass {
         vis.els.axisX = vis.els.axesG.append('g')
             .attr('class', 'compass_axis_x')
             .style('transform', `translateX(${vis.configs.offset}px)`);
-        this.buildAxis(vis.els.axisX, vis.configs.tickCount, [0, vis.configs.tickSize])
+        // this.buildAxis(vis.els.axisX, vis.configs.tickCount, [0, vis.configs.tickSize])
         vis.els.axisY = vis.els.axesG.append('g')
             .attr('class', 'compass_axis_y')
             .style('transform', `translateY(${vis.configs.offset}px)`);
-        this.buildAxis(vis.els.axisY, vis.configs.tickCount, [vis.configs.tickSize, 0])
+        // this.buildAxis(vis.els.axisY, vis.configs.tickCount, [vis.configs.tickSize, 0])
         vis.els.labelG = vis.els.offsetG.append('g')
             .attr('class', 'compass_label_g')
             .style('transform', `translate(${vis.configs.labelPadding}px, ${vis.configs.labelPadding}px)`);
@@ -159,7 +160,6 @@ export default class Compass {
         this.tools.scDims
             .range([0, vis.configs.r * 2])
             .domain([-dim / 2, dim / 2]);
-        this.tools.scTick
 
         // Check coordinate position - purpose:placement
         const x = this.lensing.configs.pos[0] / vis.lensing.configs.pxRatio -
@@ -199,30 +199,120 @@ export default class Compass {
         vis.els.offsetG.style('transform', `translate(${-vis.configs.w / 2}px, ${-vis.configs.h / 2}px)`);
 
         // Update scales
-        vis.updateAxis(vis.els.axisX, [vis.configs.h - 2 * (vis.configs.offset + vis.configs.padding), 0]);
-        vis.updateAxis(vis.els.axisY, [0, vis.configs.w - 2 * (vis.configs.offset + vis.configs.padding)]);
+        // const axisL = vis.configs.h - 2 * (vis.configs.offset + vis.configs.padding);
+        // vis.tools.scAxis.range([-axisL / 2, axisL / 2]);
+        // vis.updateAxis(vis.els.axisX, 'x',[axisL, 0]);
+        // vis.updateAxis(vis.els.axisY, 'y', [0, axisL]);
 
-        // // Update axes
-        // vis.els.axisX
-        //     .transition()
-        //     .call(
-        //         vis.tools.axisX.ticks(3).scale(vis.tools.scDims)
-        //     );
-        // vis.els.axisY
-        //     .transition()
-        //     .call(
-        //         vis.tools.axisY.ticks(3).scale(vis.tools.scDims)
-        //     );
-        // vis.els.axesG.selectAll('path')
-        //     .attr('stroke', 'white')
-        //     .attr('stroke-width', 0.5);
-        // vis.els.axesG.selectAll('line')
-        //     .attr('stroke', 'white')
-        //     .attr('stroke-width', 0.5);
-        // vis.els.axesG.selectAll('text')
-        //     .attr('font-weight', 100)
-        //     .attr('font-size', 8)
-        //     .attr('fill', 'white');
+        // Function
+        function tinkerWithTicks(axis, dir) {
+            axis.selectAll('.tick')
+                .each(function (d) {
+                    const tick = d3.select(this);
+
+                    let tickText = tick.select('text');
+
+                    //
+                    const x = +tickText.attr('x')
+                    const y = +tickText.attr('y')
+                    const dx = +tickText.attr('dx')
+                    const dy = +tickText.attr('dy')
+
+                    if (dir === 'x') {
+
+                        // Perform rotation
+                        if (vis.configs.degFactor === 0) {
+
+                            tickText.style('transform', `rotate(0deg) translate(${0}px, ${0}px)`)
+                            tickText.attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'auto')
+
+                        } else if (vis.configs.degFactor === 1) {
+
+                            tickText.style('transform', `rotate(-90deg) translate(${-y}px, ${-y}px)`)
+                            tickText.attr('text-anchor', 'start')
+                                .attr('dominant-baseline', 'middle')
+                        } else if (vis.configs.degFactor === 2) {
+
+                            tickText.style('transform', `rotate(-180deg) translate(${0}px, ${-2 * y}px)`)
+                            tickText.attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'hanging')
+                        } else if (vis.configs.degFactor === 3) {
+
+                            tickText.style('transform', `rotate(-270deg) translate(${y}px, ${-y}px)`)
+                            tickText.attr('text-anchor', 'end')
+                                .attr('dominant-baseline', 'middle')
+                        }
+                        // If x-axis or y-axis
+
+                    } else if (dir === 'y') {
+
+                        // Perform rotation
+                        if (vis.configs.degFactor === 0) {
+
+                            tickText.style('transform', `rotate(0deg) translate(${0}px, ${0}px)`)
+                            tickText.attr('text-anchor', 'end')
+                                .attr('dominant-baseline', 'auto')
+
+                        } else if (vis.configs.degFactor === 1) {
+
+                            tickText.style('transform', `rotate(-90deg) translate(${-x}px, ${x * 2}px)`)
+                            tickText.attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'hanging')
+
+                        } else if (vis.configs.degFactor === 2) {
+
+                            tickText.style('transform', `rotate(-180deg) translate(${-x * 2}px, ${0}px)`)
+                            tickText.attr('text-anchor', 'start')
+                                .attr('dominant-baseline', 'top')
+
+                        } else if (vis.configs.degFactor === 3) {
+
+                            tickText.style('transform', `rotate(-270deg) translate(${-x}px, ${-x}px)`)
+                            tickText.attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'hanging')
+                        }
+                    }
+
+                });
+
+            // Main variables
+            // let tickTextG = tick.select('.tickTextG');
+
+            // Add if does not exist
+            // if (tickTextG.size() === 0) {
+            //     tickTextG = tick.append('g')
+            //         .attr('class', 'tickTextG');
+            //     tickText.remove();
+            //     tickTextG.node().append(tickText.node());
+            //
+            // }
+
+        }
+
+        // Update axes
+        vis.els.axisX
+            .transition()
+            .call(
+                vis.tools.axisX.ticks(3).scale(vis.tools.scDims)
+            );
+        tinkerWithTicks(vis.els.axisX, 'x');
+        vis.els.axisY
+            .transition()
+            .call(
+                vis.tools.axisY.ticks(3).scale(vis.tools.scDims)
+            );
+        tinkerWithTicks(vis.els.axisY, 'y');
+        vis.els.axesG.selectAll('path')
+            .attr('stroke', 'white')
+            .attr('stroke-width', 0.5);
+        vis.els.axesG.selectAll('line')
+            .attr('stroke', 'white')
+            .attr('stroke-width', 0.5);
+        vis.els.axesG.selectAll('text')
+            .attr('font-weight', 100)
+            .attr('font-size', 8)
+            .attr('fill', 'white');
 
         // Update label
         vis.els.labelText
@@ -246,32 +336,56 @@ export default class Compass {
             .attr('y1', 0)
             .attr('stroke', 'white')
             .attr('stroke-width', 0.5);
+        const ticksG = group.append('g')
+            .attr('class', 'compass_axis_ticks_g');
         for (let i = 0; i < ticks; i++) {
-            group.append('line')
+            const tickG = ticksG.append('g')
+                .attr('class', 'compass_axis_tick_g');
+            tickG.append('line')
                 .attr('class', 'compass_axis_tick')
-                .attr('x0', 0)
-                .attr('y0', 0)
-                .attr('x1', -dir[0])
-                .attr('y1', -dir[1])
+                .attr('x1', 0)
+                .attr('y1', 0)
+                .attr('x2', -dir[0])
+                .attr('y2', -dir[1])
                 .attr('stroke', 'white')
                 .attr('stroke-width', 0.5);
+            tickG.append('g')
+                .attr('class', 'compass_axis_tick_text_g')
+                .style('transform', `translate(${-dir[0] * 2}px, ${-dir[1] * 2}px)`)
+                .append('text')
+                .attr('class', 'compass_axis_tick_text')
+                .attr('font-family', 'sans-serif')
+                .attr('font-size', 8)
+                .attr('font-weight', '300')
+                .attr('fill', 'rgba(255, 255, 255, 1)');
+
         }
+        this.tools.scAxis.domain([0, ticks - 1])
     }
 
     /**
      * @function updateAxis
      */
-    updateAxis(group, dir) {
+    updateAxis(group, axis, dir) {
+        const vis = this;
         group.select('.compass_axis_line')
             .attr('x1', dir[0])
             .attr('y1', dir[1]);
-        group.selectAll('.compass_axis_tick')
-            .each(function(d, i) {
-                const tick = d3.select(this);
-                if (dir[1] === 0) {
+        const ticksG = group.select('.compass_axis_ticks_g')
+            .style('transform', `translate(${dir[0] / 2}px, ${dir[1] / 2}px)`);
+        ticksG.selectAll('.compass_axis_tick_g')
+            .each(function (d, i) {
+                const tickG = d3.select(this);
+                const translate = vis.tools.scAxis(i);
+                if (axis === 'x') {
+                    tickG.transition()
+                        .style('transform', `translate(${translate}px, 0)`)
                 } else {
-
+                    tickG.transition()
+                        .style('transform', `translate(0, ${translate}px)`)
                 }
+                tickG.select('text')
+                    .text(translate)
             })
     }
 }
