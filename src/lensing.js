@@ -4,6 +4,7 @@ Lensing
 
 import Compass from './compass';
 import Controls from './controls';
+import Events from './events';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder';
 
@@ -24,6 +25,7 @@ export default class Lensing {
     // Class refs
     compass = null;
     controls = null;
+    events = null;
     lenses = null;
     viewfinder = null;
 
@@ -103,9 +105,6 @@ export default class Lensing {
         this.viewer_canvas = this.viewer.canvas.querySelector('canvas');
         this.viewer_aux_canvas = this.viewer_aux.canvas.querySelector('canvas');
 
-        // Add event listeners to viewer
-        this.attach_events();
-
         // Build lens overlay
         this.overlay = this.build_overlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
@@ -126,6 +125,10 @@ export default class Lensing {
         if (this.data_load.length > 0) {
             this.analyze_data_load();
         }
+
+        // Add event listeners to viewer
+        this.events = new Events(this);
+        this.attach_events();
 
     }
 
@@ -170,7 +173,7 @@ export default class Lensing {
         this.viewer.canvas.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
 
         // Key-ing
-        document.addEventListener('keydown', this.handle_viewer_keydown.bind(this));
+        document.addEventListener('keydown', this.events.handle_viewer_keydown.bind(this.events));
     }
 
     /**
@@ -402,128 +405,6 @@ export default class Lensing {
         // Get pos data from event
         this.position_data.currentEvent = 'pan';
         this.position_data.screenCoords = [Math.round(e.position.x), Math.round(e.position.y)];
-    }
-
-    /**
-     * @function handle_viewer_keydown
-     * Handles keyboard shortcuts
-     *
-     * @param {Event} e
-     *
-     * @returns void
-     */
-    handle_viewer_keydown(e) {
-
-        // Lens filter
-        const keys_filter = ['{', '}', '|'];
-        if (keys_filter.includes(e.key)) {
-            // Specifics
-            if (e.key === '{') {
-                this.lenses.change_lens('prev', 'filter');
-            } else if (e.key === '}') {
-                this.lenses.change_lens('next', 'filter');
-            } else if (e.key === '|') {
-                this.lenses.change_lens('none', 'filter');
-            }
-            // Generics
-            this.configs.counter_exception = true;
-            this.manage_slider_update();
-            this.manage_viewfinder_update();
-            this.controls.update_report();
-            this.manage_lens_update();
-        }
-
-        // Lens shape
-        const keys_shape = ['L'];
-        if (keys_shape.includes(e.key)) {
-            // Specifics
-            if (e.key === 'L') {
-                if (this.configs.shape === 'circle') {
-                    this.configs.shape = 'square';
-                } else if (this.configs.shape === 'square') {
-                    this.configs.shape = 'circle';
-                }
-            }
-            // Generics
-            this.configs.counter_exception = true;
-            this.manage_lens_update();
-        }
-
-        // Lens on
-        const keys_onOff = ['l'];
-        if (keys_onOff.includes(e.key)) {
-            // Specifics
-            if (e.key === 'l') {
-                this.configs.on = !this.configs.on;
-            }
-            // Generics
-            this.configs.counter_exception = true;
-            this.manage_lens_update();
-        }
-
-        // Lens sizing
-        const keys_size = ['[', ']', '\\'];
-        if (keys_size.includes(e.key)) {
-            // Specifics
-            if (e.key === '[') {
-                if (this.configs.rad - this.configs.rad_inc >= this.configs.rad_min) {
-                    this.configs.rad -= this.configs.rad_inc;
-                }
-            } else if (e.key === ']') {
-                if (this.configs.rad + this.configs.rad_inc <= this.configs.rad_max) {
-                    this.configs.rad += this.configs.rad_inc;
-                }
-            } else if (e.key === '\\') {
-                this.configs.rad = this.configs.rad_default;
-            }
-            // Generics
-            this.configs.counter_exception = true;
-            this.manage_lens_update();
-        }
-
-        // Lens placement
-        const keys_dropFetch = ['p'];
-        if (keys_dropFetch.includes(e.key)) {
-            // Specifics
-            if (e.key === 'p') {
-                this.configs.placed = !this.configs.placed;
-            }
-            // Generics
-            this.configs.counter_exception = true;
-            this.manage_lens_update();
-        }
-
-        // Lens magnification
-        const keys_mag = ['m', ',', '.', '/'];
-        if (keys_mag.includes(e.key)) {
-            // Specifics
-            if (e.key === 'm') {
-                this.lenses.change_lens('next', 'magnifier');
-                this.configs.mag = this.lenses.selections.magnifier.settings.active =
-                    this.lenses.selections.magnifier.settings.default;
-            } else if (e.key === ',') {
-                if (this.configs.mag - this.lenses.selections.magnifier.settings.step >=
-                    this.lenses.selections.magnifier.settings.min) {
-                    this.configs.mag -= this.lenses.selections.magnifier.settings.step;
-                    this.lenses.selections.magnifier.settings.active = this.configs.mag;
-                }
-            } else if (e.key === '.') {
-                if (this.configs.mag + this.lenses.selections.magnifier.settings.step <=
-                    this.lenses.selections.magnifier.settings.max) {
-                    this.configs.mag += this.lenses.selections.magnifier.settings.step;
-                    this.lenses.selections.magnifier.settings.active = this.configs.mag;
-                }
-            } else if (e.key === '/') {
-                this.configs.mag = this.lenses.selections.magnifier.settings.default;
-                this.lenses.selections.magnifier.settings.active = this.configs.mag;
-            }
-            // Generics
-            this.configs.counter_exception = true;
-            this.position_data.refPoint = this.position_data.eventPoint;
-            this.position_data.zoom = this.viewer.viewport.getZoom(true);
-            this.controls.update_report();
-            this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
-        }
     }
 
     /**

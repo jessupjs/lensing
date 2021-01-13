@@ -24,6 +24,7 @@ export default class Compass {
         unitConv: null,
         unitPhysX: '',
         unitPhysY: '',
+        visible: false,
         w: 0,
     }
 
@@ -86,11 +87,9 @@ export default class Compass {
         vis.els.axisX = vis.els.axesG.append('g')
             .attr('class', 'compass_axis_x')
             .style('transform', `translateX(${vis.configs.offset}px)`);
-        // this.buildAxis(vis.els.axisX, vis.configs.tickCount, [0, vis.configs.tickSize])
         vis.els.axisY = vis.els.axesG.append('g')
             .attr('class', 'compass_axis_y')
             .style('transform', `translateY(${vis.configs.offset}px)`);
-        // this.buildAxis(vis.els.axisY, vis.configs.tickCount, [vis.configs.tickSize, 0])
         vis.els.labelG = vis.els.offsetG.append('g')
             .attr('class', 'compass_label_g')
             .style('transform', `translate(${vis.configs.labelPadding}px, ${vis.configs.labelPadding}px)`);
@@ -192,17 +191,12 @@ export default class Compass {
 
         // Update svg size
         vis.els.svg.attr('width', vis.configs.w)
-            .attr('height', vis.configs.h);
+            .attr('height', vis.configs.h)
+            .style('visibility', this.configs.visible ? 'visible' : 'hidden');
         const transform =
             `translate(${vis.configs.w / 2}px, ${vis.configs.h / 2}px) rotate(${vis.configs.degFactor * 90}deg)`;
         vis.els.g.transition(100).style('transform', transform);
         vis.els.offsetG.style('transform', `translate(${-vis.configs.w / 2}px, ${-vis.configs.h / 2}px)`);
-
-        // Update scales
-        // const axisL = vis.configs.h - 2 * (vis.configs.offset + vis.configs.padding);
-        // vis.tools.scAxis.range([-axisL / 2, axisL / 2]);
-        // vis.updateAxis(vis.els.axisX, 'x',[axisL, 0]);
-        // vis.updateAxis(vis.els.axisY, 'y', [0, axisL]);
 
         // Function
         function tinkerWithTicks(axis, dir) {
@@ -387,5 +381,14 @@ export default class Compass {
                 tickG.select('text')
                     .text(translate)
             })
+    }
+
+    /**
+     * updateVisibility
+     */
+    updateVisibility() {
+
+        this.configs.visible = !this.configs.visible;
+        this.wrangle();
     }
 }
