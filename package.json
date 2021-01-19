@@ -1,6 +1,6 @@
 {
   "name": "lensing",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "Lens tooling plugin for OpenSeadragon ",
   "main": "./dist/main.js",
   "scripts": {
@@ -20,7 +20,8 @@
   "homepage": "https://github.com/jessupjs/lensing#readme",
   "keywords": [],
   "dependencies": {
-    "d3": "^6.3.0"
+    "d3": "^6.3.0",
+    "rxjs": "^6.6.3"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",

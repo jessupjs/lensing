@@ -142,6 +142,17 @@ export default class Events {
                 this.lensing.compass.updateVisibility();
             }
         }
+
+        // Lens snapshot
+        const keys_snapshot = ['D'];
+        if (keys_snapshot.includes(e.key)) {
+            // Specifics
+            if (e.key === 'D') {
+                this.lensing.snapshots.take_snapshot();
+            }
+        }
+
+
     }
 
 

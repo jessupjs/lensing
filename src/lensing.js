@@ -7,6 +7,8 @@ import Controls from './controls';
 import Events from './events';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder';
+import Snapshots from './snapshots';
+
 
 /*
 TODO -
@@ -120,6 +122,9 @@ export default class Lensing {
 
         // Instantiate compass
         this.compass = new Compass(this);
+
+        // Instantiate snapshots
+        this.snapshots = new Snapshots(this);
 
         // Ck filters / viewfinder setups from data_load
         if (this.data_load.length > 0) {
@@ -315,6 +320,9 @@ export default class Lensing {
 
                     // Filter
                     let filteredD = this.lenses.modify(data.d);
+
+                    // Save
+                    this.imgData = filteredD;
 
                     // Convert to bitmap
                     createImageBitmap(filteredD).then(imgBitmap => {
