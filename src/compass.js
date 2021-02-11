@@ -16,7 +16,7 @@ export default class Compass {
         dimsPhys: [],
         h: 0,
         offset: 10,
-        labelPadding: 35,
+        labelPadding: 40,
         padding: 40,
         r: 0,
         tickCount: 5,
@@ -269,18 +269,6 @@ export default class Compass {
                     }
 
                 });
-
-            // Main variables
-            // let tickTextG = tick.select('.tickTextG');
-
-            // Add if does not exist
-            // if (tickTextG.size() === 0) {
-            //     tickTextG = tick.append('g')
-            //         .attr('class', 'tickTextG');
-            //     tickText.remove();
-            //     tickTextG.node().append(tickText.node());
-            //
-            // }
 
         }
 

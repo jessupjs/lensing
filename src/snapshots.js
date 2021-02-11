@@ -29,8 +29,8 @@ export default class Snapshots {
             date: new Date(),
             id: (new Date()).getTime(),
             imgData: this.lensing.imgData,
-            lensingConfigs: this.lensing.configs,
-            positionData: this.lensing.position_data,
+            lensingConfigs: JSON.parse(JSON.stringify(this.lensing.configs)),
+            positionData: JSON.parse(JSON.stringify(this.lensing.position_data)),
         });
 
         // Update subject
