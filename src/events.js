@@ -35,7 +35,7 @@ export default class Events {
                 this.lensing.lenses.change_lens('none', 'filter');
             }
             // Generics
-            this.lensing.configs.counter_exception = true;
+            this.lensing.configs.counterException = true;
             this.lensing.manage_slider_update();
             this.lensing.manage_viewfinder_update();
             this.lensing.controls.update_report();
@@ -54,7 +54,7 @@ export default class Events {
                 }
             }
             // Generics
-            this.lensing.configs.counter_exception = true;
+            this.lensing.configs.counterException = true;
             this.lensing.manage_lens_update();
         }
 
@@ -66,7 +66,7 @@ export default class Events {
                 this.lensing.configs.on = !this.lensing.configs.on;
             }
             // Generics
-            this.lensing.configs.counter_exception = true;
+            this.lensing.configs.counterException = true;
             this.lensing.manage_lens_update();
         }
 
@@ -75,18 +75,18 @@ export default class Events {
         if (keys_size.includes(e.key)) {
             // Specifics
             if (e.key === '[') {
-                if (this.lensing.configs.rad - this.lensing.configs.rad_inc >= this.lensing.configs.rad_min) {
-                    this.lensing.configs.rad -= this.lensing.configs.rad_inc;
+                if (this.lensing.configs.rad - this.lensing.configs.radInc >= this.lensing.configs.radMin) {
+                    this.lensing.configs.rad -= this.lensing.configs.radInc;
                 }
             } else if (e.key === ']') {
-                if (this.lensing.configs.rad + this.lensing.configs.rad_inc <= this.lensing.configs.rad_max) {
-                    this.lensing.configs.rad += this.lensing.configs.rad_inc;
+                if (this.lensing.configs.rad + this.lensing.configs.radInc <= this.lensing.configs.radMax) {
+                    this.lensing.configs.rad += this.lensing.configs.radInc;
                 }
             } else if (e.key === '\\') {
-                this.lensing.configs.rad = this.lensing.configs.rad_default;
+                this.lensing.configs.rad = this.lensing.configs.radDefault;
             }
             // Generics
-            this.lensing.configs.counter_exception = true;
+            this.lensing.configs.counterException = true;
             this.lensing.manage_lens_update();
         }
 
@@ -98,7 +98,7 @@ export default class Events {
                 this.lensing.configs.placed = !this.lensing.configs.placed;
             }
             // Generics
-            this.lensing.configs.counter_exception = true;
+            this.lensing.configs.counterException = true;
             this.lensing.manage_lens_update();
         }
 
@@ -127,9 +127,9 @@ export default class Events {
                 this.lensing.lenses.selections.magnifier.settings.active = this.lensing.configs.mag;
             }
             // Generics
-            this.lensing.configs.counter_exception = true;
-            this.lensing.position_data.refPoint = this.lensing.position_data.eventPoint;
-            this.lensing.position_data.zoom = this.lensing.viewer.viewport.getZoom(true);
+            this.lensing.configs.counterException = true;
+            this.lensing.positionData.refPoint = this.lensing.positionData.eventPoint;
+            this.lensing.positionData.zoom = this.lensing.viewer.viewport.getZoom(true);
             this.lensing.controls.update_report();
             this.lensing.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: true});
         }

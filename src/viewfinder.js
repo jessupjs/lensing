@@ -101,8 +101,8 @@ export default class Viewfinder {
             vis.configs.gH = vis.configs.h - (vis.configs.gMargin.top + vis.configs.gMargin.bottom);
 
             // Check coordinate position - purpose:placement
-            const x = this.lensing.configs.pos[0] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientWidth / 2;
-            const y = this.lensing.configs.pos[1] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientHeight / 2;
+            const x = this.lensing.positionData.pos[0] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientWidth / 2;
+            const y = this.lensing.positionData.pos[1] / vis.lensing.configs.pxRatio - this.lensing.viewer.canvas.clientHeight / 2;
             vis.configs.deg = Math.atan2(y, x) * (180 / Math.PI);
 
             // Update tools - purpose:placement

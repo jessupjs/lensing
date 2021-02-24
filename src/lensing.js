@@ -39,9 +39,11 @@ export default class Lensing {
     viewer_aux_canvas = null;
 
     // Position data
-    position_data = {
+    positionData = {
         centerPoint: null,
         currentEvent: '',
+        pos: [],
+        posFull: [],
         refPoint: null,
         eventPoint: null,
         screenCoords: [],
@@ -54,22 +56,20 @@ export default class Lensing {
         compassOn: false,
         compassUnitConversion: null,
         counter: 0,
-        counter_control: 2,
-        counter_exception: false,
+        counterControl: 2,
+        counterException: false,
         imageMetadata: null,
         mag: 1,
         on: true,
         placed: false,
-        pos: [],
-        pos_full: [],
         px: '',
         pxData: null,
         pxRatio: 1,
         rad: 100,
-        rad_default: 100,
-        rad_inc: 10,
-        rad_min: 0,
-        rad_max: 400,
+        radDefault: 100,
+        radInc: 10,
+        radMin: 0,
+        radMax: 400,
         shape: 'circle',
     }
 
@@ -276,9 +276,9 @@ export default class Lensing {
         // Configs pxRatio
         this.configs.pxRatio = pxRatio;
         this.configs.rad = Math.round(50 * pxRatio);
-        this.configs.rad_default = Math.round(50 * pxRatio);
-        this.configs.rad_inc = Math.round(5 * pxRatio);
-        this.configs.rad_max = Math.round(200 * pxRatio);
+        this.configs.radDefault = Math.round(50 * pxRatio);
+        this.configs.radInc = Math.round(5 * pxRatio);
+        this.configs.radMax = Math.round(200 * pxRatio);
 
     }
 
@@ -293,10 +293,10 @@ export default class Lensing {
     draw_lens(data) {
 
         // if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
-        if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
+        if (this.configs.counter % this.configs.counterControl === 0 || this.configs.counterException) {
 
             // Reset
-            this.configs.counter_exception = false;
+            this.configs.counterException = false;
 
             // Place in
             requestAnimationFrame(() => {
@@ -389,12 +389,12 @@ export default class Lensing {
     handle_viewer_animation(e) {
 
         // Update some position data
-        this.position_data.zoom = this.viewer.viewport.getZoom();
-        this.position_data.zoomAux = this.viewer_aux.viewport.getZoom();
+        this.positionData.zoom = this.viewer.viewport.getZoom();
+        this.positionData.zoomAux = this.viewer_aux.viewport.getZoom();
 
         // If panning (dragging)
-        if (this.position_data.screenCoords.length > 0) {
-            this.set_position(this.position_data.screenCoords);
+        if (this.positionData.screenCoords.length > 0) {
+            this.set_position(this.positionData.screenCoords);
         } else {
             this.manage_lens_update();
         }
@@ -411,8 +411,8 @@ export default class Lensing {
     handle_viewer_canvasdrag(e) {
 
         // Get pos data from event
-        this.position_data.currentEvent = 'pan';
-        this.position_data.screenCoords = [Math.round(e.position.x), Math.round(e.position.y)];
+        this.positionData.currentEvent = 'pan';
+        this.positionData.screenCoords = [Math.round(e.position.x), Math.round(e.position.y)];
     }
 
     /**
@@ -429,11 +429,11 @@ export default class Lensing {
         this.configs.on = true;
 
         // Set hidden viewer and overlay pos
-        this.position_data.screenCoords = [
+        this.positionData.screenCoords = [
             e.clientX - this.viewer_aux_canvas.getBoundingClientRect().x,
             e.clientY - this.viewer_aux_canvas.getBoundingClientRect().y
         ];
-        this.set_position(this.position_data.screenCoords);
+        this.set_position(this.positionData.screenCoords);
 
         // Update if not placed
         if (!this.configs.placed) {
@@ -452,11 +452,11 @@ export default class Lensing {
     handle_viewer_mousemove(e) {
 
         // Set hidden viewer and overlay pos
-        this.position_data.screenCoords = [
+        this.positionData.screenCoords = [
             e.clientX - this.viewer_aux_canvas.getBoundingClientRect().x,
             e.clientY - this.viewer_aux_canvas.getBoundingClientRect().y
         ];
-        this.set_position(this.position_data.screenCoords);
+        this.set_position(this.positionData.screenCoords);
 
         // If not placed
         if (!this.configs.placed) {
@@ -487,10 +487,10 @@ export default class Lensing {
     handle_viewer_open() {
 
         // Defaults
-        this.position_data.refPoint = this.viewer.viewport.getCenter(false);
-        this.position_data.centerPoint = this.viewer.viewport.getCenter(false);
-        this.position_data.eventPoint = this.viewer.viewport.getCenter(false);
-        this.position_data.zoom = this.viewer.viewport.getZoom(true);
+        this.positionData.refPoint = this.viewer.viewport.getCenter(false);
+        this.positionData.centerPoint = this.viewer.viewport.getCenter(false);
+        this.positionData.eventPoint = this.viewer.viewport.getCenter(false);
+        this.positionData.zoom = this.viewer.viewport.getZoom(true);
     }
 
     /**
@@ -504,21 +504,18 @@ export default class Lensing {
     handle_viewer_zoom(e) {
 
         // Update zoom data
-        this.position_data.zoom = e.zoom;
+        this.positionData.zoom = e.zoom;
         if (e.refPoint && e.refPoint.hasOwnProperty('x') && e.refPoint.hasOwnProperty('y')) {
 
             // Config
-            this.position_data.currentEvent = 'zoom';
-            //this.position_data.refPoint = e.refPoint;
-            this.position_data.screenCoords = [];
-            //this.set_position(e.refPoint, true);
+            this.positionData.currentEvent = 'zoom';
+            this.positionData.screenCoords = [];
 
             // Emulate event
-            this.position_data.refPoint = e.refPoint;
+            this.positionData.refPoint = e.refPoint;
             this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: false});
         } else {
-            this.position_data.refPoint = this.viewer.viewport.getCenter(false);
-            //this.set_position(this.viewer.viewport.getCenter(false), true);
+            this.positionData.refPoint = this.viewer.viewport.getCenter(false);
         }
     }
 
@@ -546,25 +543,25 @@ export default class Lensing {
 
         // Check if zoom or pan
         if (e.eventType === 'zoom' || !e.eventType) {
-            if (this.position_data.zoom && this.position_data.refPoint
-                && this.position_data.refPoint.hasOwnProperty('x')
-                && this.position_data.refPoint.hasOwnProperty('y')) {
+            if (this.positionData.zoom && this.positionData.refPoint
+                && this.positionData.refPoint.hasOwnProperty('x')
+                && this.positionData.refPoint.hasOwnProperty('y')) {
 
                 // Diff variable
                 const diff = this.viewer_aux_canvas.width / this.viewer_canvas.width;
 
                 // Zoom
                 this.viewer_aux.viewport.zoomTo(
-                    this.position_data.zoom * this.configs.mag / diff,
-                    this.position_data.refPoint,
+                    this.positionData.zoom * this.configs.mag / diff,
+                    this.positionData.refPoint,
                     e.immediately
                 );
             }
         } else if (e.eventType === 'pan') {
-            if (this.position_data.refPoint) {
+            if (this.positionData.refPoint) {
 
                 // Pan
-                this.viewer_aux.viewport.panTo(this.position_data.refPoint, e.immediately);
+                this.viewer_aux.viewport.panTo(this.positionData.refPoint, e.immediately);
             }
         }
 
@@ -590,7 +587,7 @@ export default class Lensing {
     manage_lens_update() {
 
         // Check pos and placement
-        if (this.configs.pos.length > 0 && !this.configs.placed) {
+        if (this.positionData.pos.length > 0 && !this.configs.placed) {
 
             // Get context, init data
             const ctx = this.viewer_aux_canvas.getContext('2d');
@@ -600,16 +597,16 @@ export default class Lensing {
             if (this.lenses.selections.magnifier.name === 'mag_standard') {
                 let xy = this.configs.rad * 2;
                 d = ctx.getImageData(
-                    this.configs.pos[0] - this.configs.rad,
-                    this.configs.pos[1] - this.configs.rad,
+                    this.positionData.pos[0] - this.configs.rad,
+                    this.positionData.pos[1] - this.configs.rad,
                     xy,
                     xy
                 );
             } else {
                 let xy = Math.round(this.configs.rad * 2 * this.configs.mag);
                 d = ctx.getImageData(
-                    this.configs.pos[0] - this.configs.rad * this.configs.mag,
-                    this.configs.pos[1] - this.configs.rad * this.configs.mag,
+                    this.positionData.pos[0] - this.configs.rad * this.configs.mag,
+                    this.positionData.pos[1] - this.configs.rad * this.configs.mag,
                     xy,
                     xy
                 );
@@ -627,8 +624,8 @@ export default class Lensing {
 
             // Draw
             this.draw_lens({
-                x: this.configs.pos[0],
-                y: this.configs.pos[1],
+                x: this.positionData.pos[0],
+                y: this.positionData.pos[1],
                 d: d
             });
         }
@@ -688,8 +685,8 @@ export default class Lensing {
 
         // Get single pixel info TODO - PoC work
         const px = ctx.getImageData(
-            this.configs.pos[0],
-            this.configs.pos[1],
+            this.positionData.pos[0],
+            this.positionData.pos[1],
             1,
             1
         );
@@ -713,7 +710,7 @@ export default class Lensing {
         // Get some cords for overlay
         let x = Math.round(coords[0] * this.configs.pxRatio);
         let y = Math.round(coords[1] * this.configs.pxRatio);
-        this.configs.pos = [x, y];
+        this.positionData.pos = [x, y];
         if (isPoint) {
             const reCoords = this.viewer.viewport.pixelFromPoint(coords);
             this.configs.pos = [
@@ -724,16 +721,16 @@ export default class Lensing {
 
         // Transform coordinates to scroll point
         const point = new this.osd.Point(coords[0], coords[1]);
-        this.position_data.eventPoint = isPoint ? coords : this.viewer.viewport.viewerElementToViewportCoordinates(point);
+        this.positionData.eventPoint = isPoint ? coords : this.viewer.viewport.viewerElementToViewportCoordinates(point);
         const pos_full = this.viewer.world.getItemAt(0)
-            ? this.viewer.world.getItemAt(0).viewportToImageCoordinates(this.position_data.eventPoint)
+            ? this.viewer.world.getItemAt(0).viewportToImageCoordinates(this.positionData.eventPoint)
             : {x: 0, y: 0};
-        this.configs.pos_full = [pos_full.x, pos_full.y];
+        this.positionData.posFull = [pos_full.x, pos_full.y];
 
         // Check for event point before calculating reference point
-        this.position_data.centerPoint = this.viewer.viewport.getCenter(true);
-        const gap = this.position_data.centerPoint.minus(this.position_data.eventPoint).divide(this.configs.mag);
-        this.position_data.refPoint = this.position_data.eventPoint.plus(gap);
+        this.positionData.centerPoint = this.viewer.viewport.getCenter(true);
+        const gap = this.positionData.centerPoint.minus(this.positionData.eventPoint).divide(this.configs.mag);
+        this.positionData.refPoint = this.positionData.eventPoint.plus(gap);
 
         // Emulate event
         this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: true});

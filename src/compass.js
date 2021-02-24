@@ -161,9 +161,9 @@ export default class Compass {
             .domain([-dim / 2, dim / 2]);
 
         // Check coordinate position - purpose:placement
-        const x = this.lensing.configs.pos[0] / vis.lensing.configs.pxRatio -
+        const x = this.lensing.positionData.pos[0] / vis.lensing.configs.pxRatio -
             vis.lensing.viewer.canvas.clientWidth / 2;
-        const y = this.lensing.configs.pos[1] / vis.lensing.configs.pxRatio -
+        const y = this.lensing.positionData.pos[1] / vis.lensing.configs.pxRatio -
             vis.lensing.viewer.canvas.clientHeight / 2;
         const deg = Math.atan2(y, x) * (180 / Math.PI) + 180;
         if (deg <= 90) {
