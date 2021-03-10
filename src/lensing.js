@@ -372,7 +372,7 @@ export default class Lensing {
                             this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
                         }
                         this.overlay.context.stroke();
-                    });
+                    }).catch(err => console.log(err));
 
                 }
             });
@@ -734,6 +734,15 @@ export default class Lensing {
 
         // Emulate event
         this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: true});
+    }
+
+    /**
+     * updateConfigs
+     */
+    updateConfigs(newConfigs) {
+        for (let [k, v] of Object.entries(newConfigs)) {
+            this.configs[k] = v;
+        }
     }
 
 }

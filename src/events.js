@@ -155,5 +155,16 @@ export default class Events {
 
     }
 
+    /**
+     * @function remoteLensUpdate
+     *
+     */
+    remoteLensUpdate(newSettings) {
+
+        // Update lensing configs
+        this.lensing.updateConfigs(newSettings.lensingConfigs);
+    }
+
+
 
 }

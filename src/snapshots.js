@@ -27,16 +27,15 @@ export default class Snapshots {
     take_snapshot() {
 
         // Set position to update position coords
-        this.lensing.set_position(this.lensing.positionData.screenCoords);
+        // this.lensing.set_position(this.lensing.positionData.screenCoords);
 
-        // Build obj and add to album
         const obj = {
             date: new Date(),
             id: (new Date()).getTime(),
             imgData: this.lensing.imgData,
             lensingConfigs: JSON.parse(JSON.stringify(this.lensing.configs)),
             positionData: JSON.parse(JSON.stringify(this.lensing.positionData)),
-        }
+        };
         this.album.push(obj);
 
         // Update subject
