@@ -16,7 +16,7 @@ export default class Compass {
         dimsPhys: [],
         h: 0,
         offset: 10,
-        labelPadding: 40,
+        labelPadding: 0,
         padding: 40,
         r: 0,
         tickCount: 5,
@@ -136,7 +136,7 @@ export default class Compass {
 
             // Scales
             vis.tools.scUnits
-                .range([0, vis.configs.dimsPhys[0]])
+                .range([0, vis.configs.dimsPhys[0] * vis.configs.dimsDigi[0]])
                 .domain([0, vis.configs.dimsDigi[0]]);
         }
 
@@ -302,7 +302,7 @@ export default class Compass {
                 if (vis.configs.degFactor <= 1) return 'rotate(-45deg)';
                 return 'rotate(135deg)';
             })
-            .html(`${vis.configs.dimsConv[0].toFixed(1)}&nbsp;${vis.configs.unitConv.outputUnit}` +
+            .html(`${d3.format('.2f')(vis.configs.dimsConv[0])}&nbsp;${vis.configs.unitConv.outputUnit}` +
                 `<tspan font-size="6" dx="1" dy="-4">2</tspan>`);
 
     }
