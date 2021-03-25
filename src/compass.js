@@ -16,7 +16,7 @@ export default class Compass {
         dimsPhys: [],
         h: 0,
         offset: 10,
-        labelPadding: 0,
+        labelPadding: 25,
         padding: 40,
         r: 0,
         tickCount: 5,
@@ -93,6 +93,7 @@ export default class Compass {
         vis.els.labelG = vis.els.offsetG.append('g')
             .attr('class', 'compass_label_g')
             .style('transform', `translate(${vis.configs.labelPadding}px, ${vis.configs.labelPadding}px)`);
+        console.log('hi')
         vis.els.labelText = vis.els.labelG.append('text')
             .attr('class', 'compass_label_text')
             .attr('text-anchor', 'middle')
