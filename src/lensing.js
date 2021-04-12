@@ -178,7 +178,7 @@ export default class Lensing {
         this.viewer.canvas.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
 
         // Key-ing
-        document.addEventListener('keydown', this.events.handle_viewer_keydown.bind(this.events));
+        this.viewer.canvas.addEventListener('keydown', this.events.handle_viewer_keydown.bind(this.events));
     }
 
     /**
@@ -426,7 +426,7 @@ export default class Lensing {
     handle_viewer_mouseover(e) {
 
         // Turn on lens
-        this.configs.on = true;
+        // this.configs.on = true;
 
         // Set hidden viewer and overlay pos
         this.positionData.screenCoords = [
@@ -474,7 +474,7 @@ export default class Lensing {
 
         // If outside of viewer, turn off mouse
         if (!this.configs.placed) {
-            this.configs.on = false;
+            // this.configs.on = false;
         }
     }
 

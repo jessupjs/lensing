@@ -93,7 +93,6 @@ export default class Compass {
         vis.els.labelG = vis.els.offsetG.append('g')
             .attr('class', 'compass_label_g')
             .style('transform', `translate(${vis.configs.labelPadding}px, ${vis.configs.labelPadding}px)`);
-        console.log('hi')
         vis.els.labelText = vis.els.labelG.append('text')
             .attr('class', 'compass_label_text')
             .attr('text-anchor', 'middle')
@@ -146,9 +145,9 @@ export default class Compass {
         const screenPt2 =
             new this.lensing.osd.Point(this.configs.r * 2, 0);
         const contextPt1 =
-            this.lensing.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
+            this.lensing.viewer_aux.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
         const contextPt2 =
-            this.lensing.viewer.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+            this.lensing.viewer_aux.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
         const diff = Math.round(contextPt2.x - contextPt1.x);
 
         // Discover dims
@@ -303,7 +302,7 @@ export default class Compass {
                 if (vis.configs.degFactor <= 1) return 'rotate(-45deg)';
                 return 'rotate(135deg)';
             })
-            .html(`${d3.format('.2f')(vis.configs.dimsConv[0])}&nbsp;${vis.configs.unitConv.outputUnit}` +
+            .html(`${d3.format('.1f')(vis.configs.dimsConv[0])}&nbsp;${vis.configs.unitConv.outputUnit}` +
                 `<tspan font-size="6" dx="1" dy="-4">2</tspan>`);
 
     }
