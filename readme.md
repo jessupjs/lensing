@@ -1,7 +1,8 @@
 ## Lensing
 
 #### Note
-This plugin for OpenSeadragon is currently in development and is not ready for use.
+This plugin introduces a lens to the OpenSeadragon viewer with several characteristic features, including hi-res magnification, physical measurements, exportable snapshots, customized overlays, and localized filtering.
+The overlays and filters in particular can be extended to support application-specific tasks.
 
 #### Refs.
 + [npm](https://www.npmjs.com/package/lensing) - `npm i lensing`
@@ -9,6 +10,25 @@ This plugin for OpenSeadragon is currently in development and is not ready for u
 
 #### Use
 1. Install w NPM
-2. More coming soon!
+2. Import at top of .js:
+    ```
+    import * as osd from 'openseadragon';
+    import * as l from 'lensing';
+    ```
+3. After original OSD viewer is instantiated, construct the lensing hidden viewer:
+    ```
+    // Instantiate viewer
+    const viewer = osd(viewer_config);
+   
+    // Compile dataLoad, i.e. custom filters (empty by default)
+    const dataLoad = []
+   
+    // Instantiate Lensing
+    viewer.lensing = l.construct(osd, viewer, viewer_config, dataLoad);
+    ```
+   
+4. Refer to the following examples if useful:
+   1. [Lensing Demo](https://github.com/jessupjs/lensing-demo)
+   2. [Minerva Analysis](https://github.com/labsyspharm/minerva_analysis)
 
 
