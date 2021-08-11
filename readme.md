@@ -28,7 +28,7 @@ The overlays and filters in particular can be extended to support application-sp
     ```
    
 4. Refer to the following examples if useful:
-   1. [Lensing Demo](https://github.com/jessupjs/lensing-demo)
-   2. [Minerva Analysis](https://github.com/labsyspharm/minerva_analysis)
+   1. [Lensing Demo](https://github.com/jessupjs/lensing-demo) - a small application that demonstrates the lensing tool's core functionalities.
+   2. [Scope2Screen](https://github.com/labsyspharm/scope2screen) - a domain-specific application (digital histopathology) that presents examples for extending functionality with custom filters and annotations.
 
 
