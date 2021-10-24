@@ -173,9 +173,9 @@ export default class Lensing {
         this.viewer.addHandler('zoom', this.handle_viewer_zoom.bind(this));
 
         // Mouse-ing
-        this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
-        this.viewer.canvas.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
-        this.viewer.canvas.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
+        document.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
+        document.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
+        document.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
 
         // Key-ing
         this.viewer.canvas.addEventListener('keydown', this.events.handle_viewer_keydown.bind(this.events));
