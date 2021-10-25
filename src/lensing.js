@@ -173,9 +173,9 @@ export default class Lensing {
         this.viewer.addHandler('zoom', this.handle_viewer_zoom.bind(this));
 
         // Mouse-ing
-        document.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
-        document.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
-        document.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
+        this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
+        this.viewer.canvas.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
+        this.viewer.canvas.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
 
         // Key-ing
         this.viewer.canvas.addEventListener('keydown', this.events.handle_viewer_keydown.bind(this.events));
@@ -293,7 +293,7 @@ export default class Lensing {
     draw_lens(data) {
 
         // if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
-        if (this.configs.counter % this.configs.counterControl === 0 || this.configs.counterException) {
+        if (this.configs.counter % this.configs.counterControl === 0 || this.configs.counterException || !this.configs.placed) {
 
             // Reset
             this.configs.counterException = false;
@@ -306,8 +306,10 @@ export default class Lensing {
                 this.overlay.canvas.setAttribute('height', this.configs.rad * 2 + 'px');
                 this.overlay.canvas.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
                 this.overlay.canvas.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-                this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
-                this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
+                if (!this.configs.placed) {
+                    this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
+                    this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
+                }
 
                 // Clear
                 this.overlay.context.clearRect(0, 0,
@@ -372,8 +374,13 @@ export default class Lensing {
                             this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
                         }
                         this.overlay.context.stroke();
+
                     }).catch(err => console.log(err));
 
+                } else {
+
+                    // Update viewfinder
+                    this.viewfinder.wrangle();
                 }
             });
         }
@@ -436,9 +443,7 @@ export default class Lensing {
         this.set_position(this.positionData.screenCoords);
 
         // Update if not placed
-        if (!this.configs.placed) {
-            this.manage_lens_update();
-        }
+        this.manage_lens_update();
     }
 
     /**
@@ -459,9 +464,7 @@ export default class Lensing {
         this.set_position(this.positionData.screenCoords);
 
         // If not placed
-        if (!this.configs.placed) {
-            this.manage_lens_update();
-        }
+        this.manage_lens_update();
     }
 
     /**
@@ -587,7 +590,8 @@ export default class Lensing {
     manage_lens_update() {
 
         // Check pos and placement
-        if (this.positionData.pos.length > 0 && !this.configs.placed) {
+        // if (this.positionData.pos.length > 0 && !this.configs.placed) {
+        if (this.positionData.pos.length > 0) {
 
             // Get context, init data
             const ctx = this.viewer_aux_canvas.getContext('2d');
@@ -707,16 +711,20 @@ export default class Lensing {
      */
     set_position(coords, isPoint = false) {
 
+
         // Get some cords for overlay
-        let x = Math.round(coords[0] * this.configs.pxRatio);
-        let y = Math.round(coords[1] * this.configs.pxRatio);
-        this.positionData.pos = [x, y];
-        if (isPoint) {
-            const reCoords = this.viewer.viewport.pixelFromPoint(coords);
-            this.configs.pos = [
-                Math.round(reCoords.x * this.configs.pxRatio),
-                Math.round(reCoords.y * this.configs.pxRatio)
-            ];
+        if (!this.configs.placed) {
+
+            let x = Math.round(coords[0] * this.configs.pxRatio);
+            let y = Math.round(coords[1] * this.configs.pxRatio);
+            this.positionData.pos = [x, y];
+            if (isPoint) {
+                const reCoords = this.viewer.viewport.pixelFromPoint(coords);
+                this.configs.pos = [
+                    Math.round(reCoords.x * this.configs.pxRatio),
+                    Math.round(reCoords.y * this.configs.pxRatio)
+                ];
+            }
         }
 
         // Transform coordinates to scroll point

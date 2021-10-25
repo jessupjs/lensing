@@ -88,6 +88,12 @@ export default class Viewfinder {
         // Define this
         const vis = this;
 
+        if (vis.lensing.configs.on) {
+            d3.select(vis.lensing.overlay.container).style('opacity', '1');
+        } else {
+            d3.select(vis.lensing.overlay.container).style('opacity', '0');
+        }
+
         if (vis.on) {
 
             // Update data
@@ -133,6 +139,7 @@ export default class Viewfinder {
         const vis = this;
 
         if (vis.on) {
+
             // Update svg, g
             vis.els.svg.attr('width', vis.configs.w)
                 .attr('height', vis.configs.h)
