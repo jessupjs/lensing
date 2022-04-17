@@ -172,6 +172,7 @@ export default class Lensing {
         this.viewer.addHandler('pan', this.handle_viewer_pan.bind(this));
         this.viewer.addHandler('zoom', this.handle_viewer_zoom.bind(this));
 
+
         // Mouse-ing
         this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
         this.viewer.canvas.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
@@ -191,6 +192,7 @@ export default class Lensing {
 
         // Update viewer positions
         const viewerEl = document.querySelector(`#${this.viewer_config.id}`)
+
         viewerEl.style.position = 'relative';
 
         // Instantiate viewer_magnify
