@@ -11,8 +11,8 @@ export default class Controls {
     slider = null;
     on = true;
 
-    /*
-    CONSTRUCTOR
+    /**
+     * @constructor
      */
     constructor(_lensing) {
         // Fields
@@ -21,11 +21,11 @@ export default class Controls {
         this.init();
     }
 
-    /**
-     * @function build_button
+    /** - TODO :: ckpt. 20220706
+     * @function init
      * Builds the button used as a dock for lensing
      *
-     * @ returns Object
+     * @returns null
      */
     init() {
 
@@ -65,7 +65,7 @@ export default class Controls {
             + `white-space: nowrap;`
         );
         container.appendChild(this.lensReport);
-        this.update_report();
+        this.updateReport();
 
         // Build iconKeyboard
         const iconKeyboard = new Image();
@@ -100,36 +100,38 @@ export default class Controls {
         container.append(this.slider);
 
         // Add event
-        this.slider.addEventListener('change', this.handle_slider_change.bind(this));
+        this.slider.addEventListener('change', this.handleSliderChange.bind(this));
+
 
     }
 
-    /**
-     * @function handle_slider_change
+    /** - TODO :: ckpt. 20220706
+     * @function handleSliderChange
      * Passes event to lenses.
      *
      * @param {Event} e
      *
      * returns void
      */
-    handle_slider_change(e) {
+    handleSliderChange(e) {
 
         // Update val
-        this.lensing.lenses.update_filter(e.target.value)
+        this.lensing.lenses.updateFilter(e.target.value)
     }
 
-    /**
-     * @function update_report
+    /** - TODO :: ckpt. 20220706
+     * @function updateReport
      * Updates lens report in controls
      *
      * returns void
      */
-    update_report() {
+    updateReport() {
 
         // Update val
-        this.lensReport.innerHTML = `${this.lensing.lenses.selections.filter.vis_name} `
+        this.lensReport.innerHTML = `${this.lensing.lenses.selections.filter.display} `
             + `${this.lensing.lenses.selections.magnifier.settings.active}X `
-            + `${this.lensing.lenses.selections.magnifier.vis_name}`
+            + `${this.lensing.lenses.selections.magnifier.display}`;
+
     }
 
 }

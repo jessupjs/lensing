@@ -9,7 +9,6 @@ import Lenses from './lenses';
 import Viewfinder from './viewfinder';
 import Snapshots from './snapshots';
 
-
 /*
 TODO -
   - Add in rotate
@@ -24,6 +23,13 @@ TODO -
  */
 export default class Lensing {
 
+    // Construct refs
+    osd = null;
+    viewer = null;
+    viewerConfig = null;
+    lensingConfig = null;
+    dataLoad = null;
+
     // Class refs
     compass = null;
     controls = null;
@@ -33,10 +39,9 @@ export default class Lensing {
 
     // Components
     overlay = null;
-    viewer = null;
-    viewer_canvas = null;
-    viewer_aux = null;
-    viewer_aux_canvas = null;
+    viewerCanvas = null;
+    viewerAux = null;
+    viewerAuxCanvas = null;
 
     // Position data
     positionData = {
@@ -53,6 +58,8 @@ export default class Lensing {
 
     // Configs
     configs = {
+        addOnBoxFilters: [],
+        addOnBoxMagnifiers: [],
         compassOn: false,
         compassUnitConversion: null,
         counter: 0,
@@ -71,27 +78,32 @@ export default class Lensing {
         radMin: 0,
         radMax: 400,
         shape: 'circle',
+        showControls: false,
     }
 
     /**
      * @constructor
      */
     constructor(_osd, _viewer, _viewer_config, _lensing_config, _data_load) {
+
+        // Arriving from source application
         this.osd = _osd;
         this.viewer = _viewer;
-        this.viewer_config = _viewer_config;
-        this.lensing_config = _lensing_config;
-        this.data_load = _data_load;
+        this.viewerConfig = _viewer_config;
+        this.lensingConfig = _lensing_config;
+        this.dataLoad = _data_load;
 
-        // Set lensing configs using device settings
-        this.config_update(this.lensing_config)
-        this.device_config();
+        // Set configs passed in from source application
+        this.configUpdate(this.lensingConfig);
+
+        // Set configs based on source device
+        this.deviceConfig();
 
         // Init
         this.init();
     }
 
-    /**
+    /** - TODO :: ckpt. 20220706
      * 1.
      * @function init
      * Initializes the viewers, overlay, lenses and viewfinders
@@ -101,14 +113,14 @@ export default class Lensing {
     init() {
 
         // Build magnifier viewer (hidden viewer)
-        this.viewer_aux = this.build_hidden_viewer();
+        this.viewerAux = this.buildHiddenViewer();
 
         // Keep viewer canvas and aux canvas as a variable
-        this.viewer_canvas = this.viewer.canvas.querySelector('canvas');
-        this.viewer_aux_canvas = this.viewer_aux.canvas.querySelector('canvas');
+        this.viewerCanvas = this.viewer.canvas.querySelector('canvas');
+        this.viewerAuxCanvas = this.viewerAux.canvas.querySelector('canvas');
 
         // Build lens overlay
-        this.overlay = this.build_overlay('lens',
+        this.overlay = this.buildOverlay('lens',
             [this.viewer.canvas.clientWidth, this.viewer.canvas.clientHeight]);
 
         // Instantiate filters / ck filters from data_load
@@ -126,92 +138,64 @@ export default class Lensing {
         // Instantiate snapshots
         this.snapshots = new Snapshots(this);
 
-        // Ck filters / viewfinder setups from data_load
-        if (this.data_load.length > 0) {
-            this.analyze_data_load();
+        // Ck filters / viewfinder setups from data_load - FIXME :: post-"Bare Bones"
+        if (this.dataLoad.length > 0) {
+            this.analyzeDataLoad();
         }
 
         // Add event listeners to viewer
         this.events = new Events(this);
-        this.attach_events();
+        this.events.bulkAttachEvents();
 
     }
 
-    /**
-     * @function analyze_data_load
+    /** - FIXME :: revisit when data is passed in (post-'bare bones' phase)
+     * @function analyzeDataLoad
      * Reviews data_load and assigns relevant variables and filters
      *
      * @returns void
      */
-    analyze_data_load() {
-        this.data_load.forEach(d => {
+    analyzeDataLoad() {
+        this.dataLoad.forEach(d => {
             // Check for filter
-            this.lenses.check_for_data_filter(d);
+            this.lenses.checkForDataFilter(d);
             // Check for viewfinder serup
             this.viewfinder.check_for_setup(d);
         })
     }
 
-    /**
-     * @function attach_events
-     * Attaches event listeners to both viewers and the document
-     *
-     * @returns void
-     */
-    attach_events() {
-
-        // Click (or open)
-        this.viewer_aux.addHandler('animation', this.handle_viewer_animation.bind(this));
-        this.viewer_aux.addHandler('click', this.handle_viewer_aux_click.bind(this));
-        this.viewer_aux.addHandler('open', this.handle_viewer_aux_open.bind(this));
-
-        // Zoom-ing or pan-ing
-        this.viewer.addHandler('animation', this.handle_viewer_animation.bind(this));
-        this.viewer.addHandler('canvas-drag', this.handle_viewer_canvasdrag.bind(this));
-        this.viewer.addHandler('open', this.handle_viewer_open.bind(this));
-        this.viewer.addHandler('pan', this.handle_viewer_pan.bind(this));
-        this.viewer.addHandler('zoom', this.handle_viewer_zoom.bind(this));
-
-
-        // Mouse-ing
-        this.viewer.canvas.addEventListener('mouseover', this.handle_viewer_mouseover.bind(this));
-        this.viewer.canvas.addEventListener('mousemove', this.handle_viewer_mousemove.bind(this));
-        this.viewer.canvas.addEventListener('mouseout', this.handle_viewer_mouseout.bind(this));
-
-        // Key-ing
-        this.viewer.canvas.addEventListener('keydown', this.events.handle_viewer_keydown.bind(this.events));
-    }
-
-    /**
-     * @function build_hidden_viewer
-     * Builds a hidden (aux) viewer that is used to project filtered / magnified data
+    /** - TODO :: ckpt. 20220706
+     * @function buildHiddenViewer
+     * Builds a hidden (aux) viewer that is used to project modified / magnified data
      *
      * @returns any
      */
-    build_hidden_viewer() {
+    buildHiddenViewer() {
 
         // Update viewer positions
-        const viewerEl = document.querySelector(`#${this.viewer_config.id}`)
+        const viewerEl = document.querySelector(`#${this.viewerConfig.id}`)
 
         viewerEl.style.position = 'relative';
 
-        // Instantiate viewer_magnify
-        const viewer_aux = new this.osd(this.viewer_config);
+        // Instantiate hidden viewer that matches configuration from source viewer
+        const viewerAux = new this.osd(this.viewerConfig);
 
-        // Position
+        // Position (0 index is original source viewer; 1 index is hidden viewer)
         const containers = viewerEl.querySelectorAll(`.openseadragon-container`);
         containers[0].classList.add('lensing-c_main');
         containers[0].style.position = 'relative';
         containers[1].classList.add('lensing-c_aux')
         containers[1].style.position = 'absolute';
+        containers[1].style.top = '0';
+        containers[1].style.left = '0';
         containers[1].style.visibility = 'hidden';
 
         // Return osd viewer
-        return viewer_aux;
+        return viewerAux;
     }
 
     /**
-     * @function build_overlay
+     * @function buildOverlay
      * Builds overlay, including canvas and svg
      *
      * @param {string} id
@@ -219,7 +203,7 @@ export default class Lensing {
      *
      * @returns any
      */
-    build_overlay(id, dims) {
+    buildOverlay(id, dims) {
 
         // Build container
         const container = document.createElement('div');
@@ -250,27 +234,29 @@ export default class Lensing {
         };
     }
 
-    /**
-     * @function config_update
-     * Updates configuration settings
+    /** - TODO :: ckpt. 20220706
+     * @function configUpdate
+     * Updates configuration settings passed from source application
      *
      * @param {any} config
      *
      * @returns void
      */
-    config_update(config) {
+    configUpdate(config) {
         for (const [k, v] of Object.entries(config)) {
-            if (this.configs.hasOwnProperty(k)) this.configs[k] = v;
+            if (this.configs.hasOwnProperty(k)) {
+                this.configs[k] = v;
+            }
         }
     }
 
-    /**
+    /** - TODO :: ckpt. 20220706
      * @function device_config
-     * Updates configurations using device pixel ratio
+     * Updates configurations using device pixel ratio (housekeeping for different monitor resolutions)
      *
      * @returns void
      */
-    device_config() {
+    deviceConfig() {
 
         // Pixel ratio
         const pxRatio = window.devicePixelRatio;
@@ -281,21 +267,21 @@ export default class Lensing {
         this.configs.radDefault = Math.round(50 * pxRatio);
         this.configs.radInc = Math.round(5 * pxRatio);
         this.configs.radMax = Math.round(200 * pxRatio);
-
     }
 
-    /**
-     * @function draw_lens
+    /** - TODO :: ckpt. 20220706
+     * @function drawLens
      * Paints the overlay
      *
      * @param {any} data
      *
      * @returns void
      */
-    draw_lens(data) {
+    drawLens(data) {
 
         // if (this.configs.counter % this.configs.counter_control === 0 || this.configs.counter_exception) {
-        if (this.configs.counter % this.configs.counterControl === 0 || this.configs.counterException || !this.configs.placed) {
+        if (this.configs.counter % this.configs.counterControl === 0 || this.configs.counterException
+            || !this.configs.placed) {
 
             // Reset
             this.configs.counterException = false;
@@ -309,8 +295,10 @@ export default class Lensing {
                 this.overlay.canvas.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
                 this.overlay.canvas.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
                 if (!this.configs.placed) {
-                    this.overlay.container.style.left = Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
-                    this.overlay.container.style.top = Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
+                    this.overlay.container.style.left =
+                        Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
+                    this.overlay.container.style.top =
+                        Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
                 }
 
                 // Clear
@@ -389,214 +377,20 @@ export default class Lensing {
         this.configs.counter++;
     }
 
-    /**
-     * @function handle_viewer_animation
-     * Manages hidden viewer zooming / positioning during zoom / pan events
-     *
-     * @returns void
-     */
-    handle_viewer_animation(e) {
-
-        // Update some position data
-        this.positionData.zoom = this.viewer.viewport.getZoom();
-        this.positionData.zoomAux = this.viewer_aux.viewport.getZoom();
-
-        // If panning (dragging)
-        if (this.positionData.screenCoords.length > 0) {
-            this.set_position(this.positionData.screenCoords);
-        } else {
-            this.manage_lens_update();
-        }
-    }
-
-    /**
-     * @function handle_viewer_canvasdrag
-     * Manages drag
-     *
-     * @param {Event} e
-     *
-     * @returns void
-     */
-    handle_viewer_canvasdrag(e) {
-
-        // Get pos data from event
-        this.positionData.currentEvent = 'pan';
-        this.positionData.screenCoords = [Math.round(e.position.x), Math.round(e.position.y)];
-    }
-
-    /**
-     * @function handle_viewer_mouseover
-     * Turns on lens (if off), updates overlay and hidden viewer positions
-     *
-     * @param {Event} e
-     *
-     * @returns void
-     */
-    handle_viewer_mouseover(e) {
-
-        // Turn on lens
-        // this.configs.on = true;
-
-        // Set hidden viewer and overlay pos
-        this.positionData.screenCoords = [
-            e.clientX - this.viewer_aux_canvas.getBoundingClientRect().x,
-            e.clientY - this.viewer_aux_canvas.getBoundingClientRect().y
-        ];
-        this.set_position(this.positionData.screenCoords);
-
-        // Update if not placed
-        this.manage_lens_update();
-    }
-
-    /**
-     * @function handle_viewer_mousemove
-     * Updates overlay and hidden viewer positions
-     *
-     * @param {Event} e
-     *
-     * @returns void
-     */
-    handle_viewer_mousemove(e) {
-
-        // Set hidden viewer and overlay pos
-        this.positionData.screenCoords = [
-            e.clientX - this.viewer_aux_canvas.getBoundingClientRect().x,
-            e.clientY - this.viewer_aux_canvas.getBoundingClientRect().y
-        ];
-        this.set_position(this.positionData.screenCoords);
-
-        // If not placed
-        this.manage_lens_update();
-    }
-
-    /**
-     * @function handle_viewer_mouseout
-     * Turns off lens if not placed when mouse is outsider viewer
-     *
-     * @returns void
-     */
-    handle_viewer_mouseout() {
-
-        // If outside of viewer, turn off mouse
-        if (!this.configs.placed) {
-            // this.configs.on = false;
-        }
-    }
-
-    /**
-     * @function handle_viewer_open
-     * Initializes position settings from center
-     *
-     * @returns void
-     */
-    handle_viewer_open() {
-
-        // Defaults
-        this.positionData.refPoint = this.viewer.viewport.getCenter(false);
-        this.positionData.centerPoint = this.viewer.viewport.getCenter(false);
-        this.positionData.eventPoint = this.viewer.viewport.getCenter(false);
-        this.positionData.zoom = this.viewer.viewport.getZoom(true);
-    }
-
-    /**
-     * @function handle_viewer_zoom
-     * Configures position data for zoom and raises hidden viewer click event
-     *
-     * @param {Event} e
-     *
-     * @returns null
-     */
-    handle_viewer_zoom(e) {
-
-        // Update zoom data
-        this.positionData.zoom = e.zoom;
-        if (e.refPoint && e.refPoint.hasOwnProperty('x') && e.refPoint.hasOwnProperty('y')) {
-
-            // Config
-            this.positionData.currentEvent = 'zoom';
-            this.positionData.screenCoords = [];
-
-            // Emulate event
-            this.positionData.refPoint = e.refPoint;
-            this.viewer_aux.raiseEvent('click', {eventType: 'zoom', immediately: false});
-        } else {
-            this.positionData.refPoint = this.viewer.viewport.getCenter(false);
-        }
-    }
-
-    /**
-     * @function handle_viewer_pan
-     * Configures position data for pan
-     *
-     * @param {Event} e
-     *
-     * @returns null
-     */
-    handle_viewer_pan(e) {
-
-    }
-
-    /**
-     * @function handle_viewer_aux_click
-     * Adjusts zoom or pan based on an emulated event from scroll
-     *
-     * @param {Event} e
-     *
-     * @returns void
-     */
-    handle_viewer_aux_click(e) {
-
-        // Check if zoom or pan
-        if (e.eventType === 'zoom' || !e.eventType) {
-            if (this.positionData.zoom && this.positionData.refPoint
-                && this.positionData.refPoint.hasOwnProperty('x')
-                && this.positionData.refPoint.hasOwnProperty('y')) {
-
-                // Diff variable
-                const diff = this.viewer_aux_canvas.width / this.viewer_canvas.width;
-
-                // Zoom
-                this.viewer_aux.viewport.zoomTo(
-                    this.positionData.zoom * this.configs.mag / diff,
-                    this.positionData.refPoint,
-                    e.immediately
-                );
-            }
-        } else if (e.eventType === 'pan') {
-            if (this.positionData.refPoint) {
-
-                // Pan
-                this.viewer_aux.viewport.panTo(this.positionData.refPoint, e.immediately);
-            }
-        }
-
-        // Events
-        this.manage_lens_update();
-    }
-
-    /*
-    handle_viewer_aux_open
-     */
-    handle_viewer_aux_open(e) {
-
-        // Fire click event
-        this.handle_viewer_aux_click(e);
-    }
-
-    /**
-     * @function manage_lens_update
+    /** - TODO :: ckpt. 20220706
+     * @function manageLensUpdate
      * Defines position configurations before redraw
      *
      * @returns void
      */
-    manage_lens_update() {
+    manageLensUpdate() {
 
         // Check pos and placement
         // if (this.positionData.pos.length > 0 && !this.configs.placed) {
         if (this.positionData.pos.length > 0) {
 
             // Get context, init data
-            const ctx = this.viewer_aux_canvas.getContext('2d');
+            const ctx = this.viewerAuxCanvas.getContext('2d');
             let d = null;
 
             // Respond to magnifaction
@@ -618,18 +412,18 @@ export default class Lensing {
                 );
             }
 
-            // If data filter is on
+            // If data filter is on - FIXME :: post-"Bare bones"
             if (this.lenses.selections.filter.name.substring(0, 8) === 'fil_data') {
-                this.set_pixel(ctx);
+                this.setPixel(ctx);
             }
 
-            // If compass is on
+            // If compass is on - FIXME :: post-"Bare bones"
             if (this.configs.compassOn) {
                 this.compass.wrangle();
             }
 
             // Draw
-            this.draw_lens({
+            this.drawLens({
                 x: this.positionData.pos[0],
                 y: this.positionData.pos[1],
                 d: d
@@ -681,13 +475,15 @@ export default class Lensing {
         }
     }
 
-    /**
-     * @function set_pixel
+    /** - TODO :: ckpt. 20220706
+     * @function setPixel
      * Sets pixel for data configured for color
+     *
+     * @param {any} ctx
      *
      * @return void
      */
-    set_pixel(ctx) {
+    setPixel(ctx) {
 
         // Get single pixel info TODO - PoC work
         const px = ctx.getImageData(
@@ -699,11 +495,11 @@ export default class Lensing {
         this.configs.pxCol = px.data[0] + '_' + px.data[1] + '_' + px.data[2];
 
         // Perform setup
-        this.lenses.selections.filter.set_pixel(px)
+        this.lenses.selections.filter.setPixel(px, this, this.lenses)
     }
 
-    /**
-     * @function set_position
+    /** - TODO :: ckpt. 20220706
+     * @function setPosition
      * Converts mouse coords to viewport point for hidden layer if mag on; sets coordinate config for overlay
      *
      * @param {array} coords
@@ -711,7 +507,7 @@ export default class Lensing {
      *
      * @returns void
      */
-    set_position(coords, isPoint = false) {
+    setPosition(coords, isPoint = false) {
 
 
         // Get some cords for overlay
@@ -731,19 +527,21 @@ export default class Lensing {
 
         // Transform coordinates to scroll point
         const point = new this.osd.Point(coords[0], coords[1]);
-        this.positionData.eventPoint = isPoint ? coords : this.viewer.viewport.viewerElementToViewportCoordinates(point);
-        const pos_full = this.viewer.world.getItemAt(0)
+        this.positionData.eventPoint = isPoint
+            ? coords
+            : this.viewer.viewport.viewerElementToViewportCoordinates(point);
+        const posFull = this.viewer.world.getItemAt(0)
             ? this.viewer.world.getItemAt(0).viewportToImageCoordinates(this.positionData.eventPoint)
             : {x: 0, y: 0};
-        this.positionData.posFull = [pos_full.x, pos_full.y];
+        this.positionData.posFull = [posFull.x, posFull.y];
 
         // Check for event point before calculating reference point
         this.positionData.centerPoint = this.viewer.viewport.getCenter(true);
         const gap = this.positionData.centerPoint.minus(this.positionData.eventPoint).divide(this.configs.mag);
         this.positionData.refPoint = this.positionData.eventPoint.plus(gap);
 
-        // Emulate event
-        this.viewer_aux.raiseEvent('click', {eventType: 'pan', immediately: true});
+        // Emulate event - FIXME :: consider automated events to events file
+        this.viewerAux.raiseEvent('click', {eventType: 'pan', immediately: true});
     }
 
     /**
