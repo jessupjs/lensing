@@ -214,6 +214,7 @@ export default class Viewfinder {
      * @param {Object} ref
      */
     check_for_setup(ref) {
+        console.log(ref)
         if (ref.config.vf_ref && ref.config.vf_ref === 'vis_data_custom') {
             this.setups.push(ref.config.get_vf_setup());
         }

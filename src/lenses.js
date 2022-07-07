@@ -75,13 +75,20 @@ export default class Lenses {
 
         // Get any added defaults from configs
         this.defaults.filterRefs =
-            Array.from(new Set(this.defaults.filterRefs.concat(this.lensing.configs.addOnBoxFilters)));
+            Array.from(new Set(
+                this.defaults.filterRefs
+                    .concat(this.lensing.configs.addOnBoxFilters)
+            ));
         this.defaults.magnifierRefs =
             Array.from(new Set(this.defaults.magnifierRefs.concat(this.lensing.configs.addOnBoxMagnifiers)));
 
         //
         this.filters = this.loadDefaultFilters();
         this.magnifiers = this.loadDefaultMagnifiers();
+
+        // Add custom filters
+        this.filters.push(...this.lensing.dataLoad);
+        console.log(this.filters)
 
         // Defaults
         this.selections.filter = this.filters[0];
@@ -185,13 +192,13 @@ export default class Lenses {
         // Define this
         const vis = this;
 
-        // Filter
-        const dataFilter = this.filters.find(d => d.name === ref.config.filter);
-        if (dataFilter) {
-            installFilter(dataFilter)
-        } else if (ref.config.filter === 'fil_data_custom') {
-            installFilter(ref.config.filterCode);
-        }
+        // // Filter
+        // const dataFilter = this.filters.find(d => d.name === ref.config.filter);
+        // if (dataFilter) {
+        //     installFilter(dataFilter)
+        // } else if (ref.config.filter === 'fil_data_custom') {
+        //     installFilter(ref.config.filterCode);
+        // }
 
         // Abstract installation
         function installFilter(fil) {

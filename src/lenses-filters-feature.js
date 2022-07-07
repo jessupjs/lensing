@@ -1,6 +1,10 @@
 const filters = [
     {
-        data: [], name: 'fil_data_rgb', display: 'Data RGB', settings: {
+        data: [],
+        name: 'fil_data_rgb',
+        display: 'Data RGB',
+        vf_ref: 'vis_data_custom',
+        settings: {
             active: 1,
             async: false,
             default: 1,

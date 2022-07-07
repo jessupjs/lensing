@@ -156,12 +156,12 @@ export default class Lensing {
      * @returns void
      */
     analyzeDataLoad() {
-        this.dataLoad.forEach(d => {
+        // this.dataLoad.forEach(d => {
             // Check for filter
-            this.lenses.checkForDataFilter(d);
+            // this.lenses.checkForDataFilter(d);
             // Check for viewfinder serup
-            this.viewfinder.check_for_setup(d);
-        })
+            // this.viewfinder.check_for_setup(d);
+        // })
     }
 
     /** - TODO :: ckpt. 20220706
