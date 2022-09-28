@@ -43,6 +43,9 @@ export default class Lensing {
     viewerAux = null;
     viewerAuxCanvas = null;
 
+    // Optimization for Safari, Edge, Firefox
+    offscreen = document.createElement('canvas');
+
     // Position data
     positionData = {
         centerPoint: null,
@@ -309,14 +312,15 @@ export default class Lensing {
         const css_x = Math.round((data.x - this.configs.rad) / px_ratio) + 'px';
         const css_y = Math.round((data.y - this.configs.rad) / px_ratio) + 'px';
 
+        this.overlay.canvas.style.width = css_diameter;
+        this.overlay.canvas.style.height = css_diameter;
         if (this.overlay.canvas.width !== canvas_diameter) {
           this.overlay.canvas.setAttribute('width', canvas_diameter + 'px');
         }
         if (this.overlay.canvas.height !== canvas_diameter) {
           this.overlay.canvas.setAttribute('height', canvas_diameter + 'px');
         }
-        this.overlay.canvas.style.width = css_diameter;
-        this.overlay.canvas.style.height = css_diameter;
+        this.overlay.context.clearRect(0, 0, canvas_diameter, canvas_diameter);
 
         if (!this.configs.placed) {
             this.overlay.container.style.left = css_x;
@@ -335,7 +339,7 @@ export default class Lensing {
             this.imgData = filteredD;
 
             // Convert to bitmap
-            createImageBitmap(filteredD).then(imgBitmap => {
+            this.createTempoaryCanvas(filteredD).then(imgBitmap => {
 
                 // Clip
                 if (this.configs.shape === 'circle') {
@@ -390,6 +394,24 @@ export default class Lensing {
             // Update viewfinder
             this.viewfinder.wrangle();
         }
+    }
+
+    /**
+     * @function createTempoaryCanvas
+     * Polyfill for IE / Safari createImageBitmap
+     * Also solves perfomance issues in Firefox
+     * @param {ImageData} imagedata
+     *
+     * @returns Promise<CanvasRenderingContext2D>
+     */
+
+    createTempoaryCanvas (imagedata) {
+      const canvas = this.offscreen;
+      const ctx = canvas.getContext('2d');
+      canvas.width = imagedata.width;
+      canvas.height = imagedata.height;
+      ctx.putImageData(imagedata, 0, 0);
+      return Promise.resolve(canvas);
     }
 
     /** - TODO :: ckpt. 20220706

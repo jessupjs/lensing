@@ -9312,6 +9312,7 @@ var lensing_Lensing = /*#__PURE__*/function () {
   // Construct refs
   // Class refs
   // Components
+  // Optimization for Safari, Edge, Firefox
   // Position data
   // Configs
 
@@ -9348,6 +9349,8 @@ var lensing_Lensing = /*#__PURE__*/function () {
     lensing_defineProperty(this, "viewerAux", null);
 
     lensing_defineProperty(this, "viewerAuxCanvas", null);
+
+    lensing_defineProperty(this, "offscreen", document.createElement('canvas'));
 
     lensing_defineProperty(this, "positionData", {
       centerPoint: null,
@@ -9579,7 +9582,7 @@ var lensing_Lensing = /*#__PURE__*/function () {
     }
     /**
      * @function animate
-     * Requests Animation Frame 
+     * Requests Animation Frame
      *
      * @param {any} data
      *
@@ -9598,6 +9601,8 @@ var lensing_Lensing = /*#__PURE__*/function () {
       var css_diameter = Math.ceil(diameter / px_ratio) + 'px';
       var css_x = Math.round((data.x - this.configs.rad) / px_ratio) + 'px';
       var css_y = Math.round((data.y - this.configs.rad) / px_ratio) + 'px';
+      this.overlay.canvas.style.width = css_diameter;
+      this.overlay.canvas.style.height = css_diameter;
 
       if (this.overlay.canvas.width !== canvas_diameter) {
         this.overlay.canvas.setAttribute('width', canvas_diameter + 'px');
@@ -9607,8 +9612,7 @@ var lensing_Lensing = /*#__PURE__*/function () {
         this.overlay.canvas.setAttribute('height', canvas_diameter + 'px');
       }
 
-      this.overlay.canvas.style.width = css_diameter;
-      this.overlay.canvas.style.height = css_diameter;
+      this.overlay.context.clearRect(0, 0, canvas_diameter, canvas_diameter);
 
       if (!this.configs.placed) {
         this.overlay.container.style.left = css_x;
@@ -9623,7 +9627,7 @@ var lensing_Lensing = /*#__PURE__*/function () {
 
         this.imgData = filteredD; // Convert to bitmap
 
-        createImageBitmap(filteredD).then(function (imgBitmap) {
+        this.createTempoaryCanvas(filteredD).then(function (imgBitmap) {
           // Clip
           if (_this.configs.shape === 'circle') {
             _this.overlay.context.beginPath();
@@ -9667,6 +9671,25 @@ var lensing_Lensing = /*#__PURE__*/function () {
         // Update viewfinder
         this.viewfinder.wrangle();
       }
+    }
+    /**
+     * @function createTempoaryCanvas
+     * Polyfill for IE / Safari createImageBitmap
+     * Also solves perfomance issues in Firefox
+     * @param {ImageData} imagedata
+     *
+     * @returns Promise<CanvasRenderingContext2D>
+     */
+
+  }, {
+    key: "createTempoaryCanvas",
+    value: function createTempoaryCanvas(imagedata) {
+      var canvas = this.offscreen;
+      var ctx = canvas.getContext('2d');
+      canvas.width = imagedata.width;
+      canvas.height = imagedata.height;
+      ctx.putImageData(imagedata, 0, 0);
+      return Promise.resolve(canvas);
     }
     /** - TODO :: ckpt. 20220706
      * @function manageLensUpdate
