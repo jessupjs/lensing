@@ -9674,7 +9674,7 @@ var lensing_Lensing = /*#__PURE__*/function () {
     }
     /**
      * @function createTempoaryCanvas
-     * Polyfill for IE / Safari createImageBitmap
+     * Polyfill for Edge / Safari createImageBitmap
      * Also solves perfomance issues in Firefox
      * @param {ImageData} imagedata
      *

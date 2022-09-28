@@ -398,7 +398,7 @@ export default class Lensing {
 
     /**
      * @function createTempoaryCanvas
-     * Polyfill for IE / Safari createImageBitmap
+     * Polyfill for Edge / Safari createImageBitmap
      * Also solves perfomance issues in Firefox
      * @param {ImageData} imagedata
      *
