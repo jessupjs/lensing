@@ -32,7 +32,6 @@ export default class Events {
         this.lensing.viewer.addHandler('open', this.handleViewerOpen.bind(this));
         this.lensing.viewer.addHandler('zoom', this.handleViewerZoom.bind(this));
 
-
         // Mouse-ing
         this.lensing.viewer.canvas.addEventListener('mouseover', this.handleViewerMouseover.bind(this));
         this.lensing.viewer.canvas.addEventListener('mousemove', this.handleViewerMousemove.bind(this));
