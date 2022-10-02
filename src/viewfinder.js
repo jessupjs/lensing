@@ -121,7 +121,8 @@ export default class Viewfinder {
 
             // Setup specific
             if (!vis.lensing.lenses.selections.filter.settings.async) {
-                vis.setup.wrangle();
+
+                this.lensing.lenses.selections.filter.vfSetup().wrangle();
             }
         }
 
@@ -177,7 +178,7 @@ export default class Viewfinder {
 
             // Setup specific
             if (!vis.lensing.lenses.selections.filter.settings.async) {
-                vis.setup.render();
+                this.lensing.lenses.selections.filter.vfSetup().render();
             }
 
         } else {
@@ -198,7 +199,9 @@ export default class Viewfinder {
         const vis = this;
 
         // Remove all from boxG
-        vis.setup.destroy();
+        if (vis.setup && vis.setup.destroy) {
+            vis.setup.destroy();
+        }
 
         // Reset class vars
         vis.set_class_vars();
@@ -214,9 +217,9 @@ export default class Viewfinder {
      * @param {Object} ref
      */
     check_for_setup(ref) {
-        console.log(ref)
-        if (ref.config.vf_ref && ref.config.vf_ref === 'vis_data_custom') {
-            this.setups.push(ref.config.get_vf_setup());
+
+        if (ref.vfSetup) {
+            this.setups.push(ref.vfSetup);
         }
     }
 

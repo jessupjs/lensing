@@ -307,6 +307,21 @@ export default class Events {
             this.lensing.manageLensUpdate();
         }
 
+        // Lens placement
+        const keys_opacity = ['o'];
+        if (keys_opacity.includes(e.key)) {
+            // Specifics
+            if (e.key === 'o') {
+                this.lensing.configs.opacity -= 0.25;
+                if (this.lensing.configs.opacity === 0) {
+                    this.lensing.configs.opacity = 1;
+                }
+            }
+            // Generics
+            this.lensing.configs.counterException = true;
+            this.lensing.manageLensUpdate();
+        }
+
         // Lens magnification
         const keys_mag = ['m', ',', '.', '/'];
         if (keys_mag.includes(e.key)) {

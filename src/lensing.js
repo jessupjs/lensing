@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 /*
 Lensing
  */
@@ -8,6 +10,7 @@ import Events from './events';
 import Lenses from './lenses';
 import Viewfinder from './viewfinder';
 import Snapshots from './snapshots';
+
 
 /*
 TODO -
@@ -67,6 +70,7 @@ export default class Lensing {
         counterException: false,
         imageMetadata: null,
         mag: 1,
+        opacity: 1,
         on: true,
         placed: false,
         px: '',
@@ -156,12 +160,12 @@ export default class Lensing {
      * @returns void
      */
     analyzeDataLoad() {
-        // this.dataLoad.forEach(d => {
+        this.dataLoad.forEach(d => {
             // Check for filter
-            // this.lenses.checkForDataFilter(d);
+            this.lenses.checkForDataFilter(d);
             // Check for viewfinder serup
-            // this.viewfinder.check_for_setup(d);
-        // })
+            this.viewfinder.check_for_setup(d);
+        })
     }
 
     /** - TODO :: ckpt. 20220706
@@ -300,6 +304,7 @@ export default class Lensing {
                     this.overlay.container.style.top =
                         Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
                 }
+                d3.select(this.overlay.canvas).style('opacity', this.configs.opacity);
 
                 // Clear
                 this.overlay.context.clearRect(0, 0,
@@ -458,7 +463,7 @@ export default class Lensing {
     manage_viewfinder_update() {
 
         // If has setup, destroy
-        if (this.viewfinder.setup) {
+        if (this.lenses.selections.filter.vfSetup) {
             this.viewfinder.refresh();
         }
 
@@ -466,10 +471,9 @@ export default class Lensing {
         this.viewfinder.on = this.lenses.selections.filter.settings.vf;
         if (this.viewfinder.on) {
 
-            // Set new setup and init
-            this.viewfinder.setup =
-                this.viewfinder.setups.find(s => s.name === this.lenses.selections.filter.settings.vf_setup);
-            if (this.viewfinder.setup) {
+            // Set setup
+            if (this.lenses.selections.filter.vfSetup) {
+                this.viewfinder.setup = this.lenses.selections.filter.vfSetup()
                 this.viewfinder.setup.init();
             }
         }
@@ -520,7 +524,7 @@ export default class Lensing {
                 const reCoords = this.viewer.viewport.pixelFromPoint(coords);
                 this.configs.pos = [
                     Math.round(reCoords.x * this.configs.pxRatio),
-                    Math.round(reCoords.y * this.configs.pxRatio)
+                    Math.round(reCoords.y * thisx.configs.pxRatio)
                 ];
             }
         }

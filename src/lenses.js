@@ -88,7 +88,6 @@ export default class Lenses {
 
         // Add custom filters
         this.filters.push(...this.lensing.dataLoad);
-        console.log(this.filters)
 
         // Defaults
         this.selections.filter = this.filters[0];
@@ -191,14 +190,6 @@ export default class Lenses {
 
         // Define this
         const vis = this;
-
-        // // Filter
-        // const dataFilter = this.filters.find(d => d.name === ref.config.filter);
-        // if (dataFilter) {
-        //     installFilter(dataFilter)
-        // } else if (ref.config.filter === 'fil_data_custom') {
-        //     installFilter(ref.config.filterCode);
-        // }
 
         // Abstract installation
         function installFilter(fil) {
