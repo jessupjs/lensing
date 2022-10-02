@@ -43,6 +43,9 @@ export default class Lensing {
     viewerAux = null;
     viewerAuxCanvas = null;
 
+    // Optimization for Safari, Edge, Firefox
+    offscreen = document.createElement('canvas');
+
     // Position data
     positionData = {
         centerPoint: null,
@@ -286,95 +289,129 @@ export default class Lensing {
             // Reset
             this.configs.counterException = false;
 
-            // Place in
-            requestAnimationFrame(() => {
-
-                // Update overlay dims and position
-                this.overlay.canvas.setAttribute('width', this.configs.rad * 2 + 'px');
-                this.overlay.canvas.setAttribute('height', this.configs.rad * 2 + 'px');
-                this.overlay.canvas.style.width = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-                this.overlay.canvas.style.height = Math.ceil(this.configs.rad * 2 / this.configs.pxRatio) + 'px';
-                if (!this.configs.placed) {
-                    this.overlay.container.style.left =
-                        Math.round((data.x - this.configs.rad) / this.configs.pxRatio) + 'px';
-                    this.overlay.container.style.top =
-                        Math.round((data.y - this.configs.rad) / this.configs.pxRatio) + 'px';
-                }
-
-                // Clear
-                this.overlay.context.clearRect(0, 0,
-                    this.overlay.canvas.width, this.overlay.canvas.height);
-
-                if (this.configs.on) {
-
-                    // Save
-                    this.overlay.context.save();
-
-                    // Filter
-                    let filteredD = this.lenses.modify(data.d);
-
-                    // Save
-                    this.imgData = filteredD;
-
-                    // Convert to bitmap
-                    createImageBitmap(filteredD).then(imgBitmap => {
-
-                        // Clip
-                        if (this.configs.shape === 'circle') {
-                            this.overlay.context.beginPath();
-                            this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad, 0, Math.PI * 2);
-                            this.overlay.context.clip();
-                        }
-
-                        // Draw
-                        if (this.lenses.selections.magnifier.name === 'mag_standard') {
-                            this.overlay.context.drawImage(imgBitmap,
-                                0,
-                                0,
-                                this.configs.rad * 2,
-                                this.configs.rad * 2
-                            );
-                        } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
-                            this.overlay.context.scale(1 / this.configs.mag, 1 / this.configs.mag)
-                            this.overlay.context.drawImage(imgBitmap,
-                                0,
-                                0,
-                                this.configs.rad * 2 * this.configs.mag,
-                                this.configs.rad * 2 * this.configs.mag
-                            );
-                        } else if (this.lenses.selections.magnifier.name === 'mag_plateau') {
-                            this.overlay.context.drawImage(imgBitmap,
-                                -(this.configs.mag - 1) * this.configs.rad,
-                                -(this.configs.mag - 1) * this.configs.rad,
-                                this.configs.rad * 2 * this.configs.mag,
-                                this.configs.rad * 2 * this.configs.mag
-                            );
-                        }
-
-                        // Restore
-                        this.overlay.context.restore();
-
-                        // Lens border / stroke
-                        this.overlay.context.strokeStyle = `white`;
-                        this.overlay.context.lineWidth = this.configs.pxRatio;
-                        this.overlay.context.beginPath();
-                        if (this.configs.shape === 'circle') {
-                            this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad - 1, 0, Math.PI * 2);
-                        } else if (this.configs.shape === 'square') {
-                            this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
-                        }
-                        this.overlay.context.stroke();
-
-                    }).catch(err => console.log(err));
-
-                } else {
-
-                    // Update viewfinder
-                    this.viewfinder.wrangle();
-                }
-            });
+            const animate = this.animate.bind(this, data);
+            requestAnimationFrame(animate);
         }
         this.configs.counter++;
+    }
+
+    /**
+     * @function animate
+     * Requests Animation Frame
+     *
+     * @param {any} data
+     *
+     * @returns void
+     */
+    animate(data) {
+        // Update overlay dims and position
+        const px_ratio = this.configs.pxRatio;
+        const diameter = this.configs.rad * 2;
+        const canvas_diameter = diameter;
+        const css_diameter =  Math.ceil(diameter / px_ratio) + 'px';
+        const css_x = Math.round((data.x - this.configs.rad) / px_ratio) + 'px';
+        const css_y = Math.round((data.y - this.configs.rad) / px_ratio) + 'px';
+
+        this.overlay.canvas.style.width = css_diameter;
+        this.overlay.canvas.style.height = css_diameter;
+        if (this.overlay.canvas.width !== canvas_diameter) {
+          this.overlay.canvas.setAttribute('width', canvas_diameter + 'px');
+        }
+        if (this.overlay.canvas.height !== canvas_diameter) {
+          this.overlay.canvas.setAttribute('height', canvas_diameter + 'px');
+        }
+        this.overlay.context.clearRect(0, 0, canvas_diameter, canvas_diameter);
+
+        if (!this.configs.placed) {
+            this.overlay.container.style.left = css_x;
+            this.overlay.container.style.top = css_y;
+        }
+
+        if (this.configs.on) {
+
+            // Save
+            this.overlay.context.save();
+
+            // Filter
+            let filteredD = this.lenses.modify(data.d);
+
+            // Save
+            this.imgData = filteredD;
+
+            // Convert to bitmap
+            this.createTempoaryCanvas(filteredD).then(imgBitmap => {
+
+                // Clip
+                if (this.configs.shape === 'circle') {
+                    this.overlay.context.beginPath();
+                    this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad, 0, Math.PI * 2);
+                    this.overlay.context.clip();
+                }
+
+                // Draw
+                if (this.lenses.selections.magnifier.name === 'mag_standard') {
+                    this.overlay.context.drawImage(imgBitmap,
+                        0,
+                        0,
+                        this.configs.rad * 2,
+                        this.configs.rad * 2
+                    );
+                } else if (this.lenses.selections.magnifier.name === 'mag_fisheye') {
+                    this.overlay.context.scale(1 / this.configs.mag, 1 / this.configs.mag)
+                    this.overlay.context.drawImage(imgBitmap,
+                        0,
+                        0,
+                        this.configs.rad * 2 * this.configs.mag,
+                        this.configs.rad * 2 * this.configs.mag
+                    );
+                } else if (this.lenses.selections.magnifier.name === 'mag_plateau') {
+                    this.overlay.context.drawImage(imgBitmap,
+                        -(this.configs.mag - 1) * this.configs.rad,
+                        -(this.configs.mag - 1) * this.configs.rad,
+                        this.configs.rad * 2 * this.configs.mag,
+                        this.configs.rad * 2 * this.configs.mag
+                    );
+                }
+
+                // Restore
+                this.overlay.context.restore();
+
+                // Lens border / stroke
+                this.overlay.context.strokeStyle = `white`;
+                this.overlay.context.lineWidth = this.configs.pxRatio;
+                this.overlay.context.beginPath();
+                if (this.configs.shape === 'circle') {
+                    this.overlay.context.arc(this.configs.rad, this.configs.rad, this.configs.rad - 1, 0, Math.PI * 2);
+                } else if (this.configs.shape === 'square') {
+                    this.overlay.context.strokeRect(1, 1, (this.configs.rad - 1) * 2, (this.configs.rad - 1) * 2);
+                }
+                this.overlay.context.stroke();
+
+            }).catch(err => console.log(err));
+
+        } else {
+
+            // Update viewfinder
+            this.viewfinder.wrangle();
+        }
+    }
+
+    /**
+     * @function createTempoaryCanvas
+     * Polyfill for Edge / Safari createImageBitmap
+     * Also solves perfomance issues in Firefox
+     * @param {ImageData} imagedata
+     *
+     * @returns Promise<CanvasRenderingContext2D>
+     */
+
+    createTempoaryCanvas (imagedata) {
+      const canvas = this.offscreen;
+      const ctx = canvas.getContext('2d');
+      canvas.width = imagedata.width;
+      canvas.height = imagedata.height;
+      ctx.putImageData(imagedata, 0, 0);
+      return Promise.resolve(canvas);
     }
 
     /** - TODO :: ckpt. 20220706
