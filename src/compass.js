@@ -136,7 +136,7 @@ export default class Compass {
 
             // Scales
             vis.tools.scUnits
-                .range([0, vis.configs.dimsPhys[0] * vis.configs.dimsDigi[0]])
+                .range([0, vis.configs.dimsPhys[0]])
                 .domain([0, vis.configs.dimsDigi[0]]);
         }
 
@@ -144,10 +144,15 @@ export default class Compass {
         const screenPt1 = new this.lensing.osd.Point(0, 0);
         const screenPt2 =
             new this.lensing.osd.Point(this.configs.r * 2, 0);
-        const contextPt1 =
-            this.lensing.viewer_aux.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
-        const contextPt2 =
-            this.lensing.viewer_aux.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+        let contextPt1 = 0;
+        let contextPt2 = 0;
+        const item = this.lensing.viewerAux.world.getItemAt(0);
+        if (item) {
+            contextPt1 =
+                this.lensing.viewerAux.world.getItemAt(0).viewerElementToImageCoordinates(screenPt1);
+            contextPt2 =
+            this.lensing.viewerAux.world.getItemAt(0).viewerElementToImageCoordinates(screenPt2)
+        }
         const diff = Math.round(contextPt2.x - contextPt1.x);
 
         // Discover dims
